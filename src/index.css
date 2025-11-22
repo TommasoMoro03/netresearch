@@ -8,48 +8,52 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Deep space dark theme */
-    --background: 220 35% 6%;
-    --foreground: 180 20% 95%;
+    /* Minimalist Futuristic Theme - Aquamarine & Sky Blue */
+    
+    /* Background: Deepest Void Blue */
+    --background: 222 47% 11%; /* #0f172a - Slate 900 */
+    --foreground: 180 100% 97%; /* #e0f2f1 - Teal 50 */
 
-    --card: 220 30% 10%;
-    --card-foreground: 180 20% 95%;
+    /* Cards & Surfaces: Slightly lighter deep blue */
+    --card: 217 33% 17%; /* #1e293b - Slate 800 */
+    --card-foreground: 180 100% 97%;
 
-    --popover: 220 30% 8%;
-    --popover-foreground: 180 20% 95%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 180 100% 97%;
 
-    /* Cyan neon primary */
-    --primary: 180 80% 50%;
-    --primary-foreground: 220 35% 6%;
+    /* Primary: Electric Aquamarine */
+    --primary: 173 80% 40%; /* #14b8a6 - Teal 500 */
+    --primary-foreground: 222 47% 11%;
 
-    /* Deep blue secondary */
-    --secondary: 220 40% 18%;
-    --secondary-foreground: 180 20% 95%;
+    /* Secondary: Sky Blue */
+    --secondary: 199 89% 48%; /* #0ea5e9 - Sky 500 */
+    --secondary-foreground: 222 47% 11%;
 
-    /* Muted blue-gray */
-    --muted: 220 25% 15%;
-    --muted-foreground: 220 10% 60%;
+    /* Muted: Cool Gray/Blue */
+    --muted: 215 25% 27%; /* #334155 - Slate 700 */
+    --muted-foreground: 215 20% 65%; /* #94a3b8 - Slate 400 */
 
-    /* Amber accent */
-    --accent: 40 90% 60%;
-    --accent-foreground: 220 35% 6%;
+    /* Accent: Bright Cyan */
+    --accent: 189 94% 43%; /* #06b6d4 - Cyan 500 */
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 80% 55%;
-    --destructive-foreground: 180 20% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 30% 18%;
-    --input: 220 30% 12%;
-    --ring: 180 80% 50%;
+    /* Borders: Subtle Cyan/Blue */
+    --border: 180 20% 20%;
+    --input: 217 33% 17%;
+    --ring: 173 80% 40%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem; /* Sharper corners for futuristic look */
 
     /* Glassmorphism effects */
-    --glass-bg: 220 30% 10% / 0.7;
-    --glass-border: 180 50% 50% / 0.2;
+    --glass-bg: 217 33% 17% / 0.4;
+    --glass-border: 173 80% 40% / 0.2;
     
     /* Neon glow */
-    --glow-primary: 180 80% 50%;
-    --glow-accent: 40 90% 60%;
+    --glow-primary: 173 80% 40%;
+    --glow-accent: 199 89% 48%;
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

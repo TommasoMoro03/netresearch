@@ -15,7 +15,7 @@ export interface GraphNode {
     contacts: string[];
     hierarchy?: PersonHierarchy[];
     // Added for force-graph
-    // Added for force-graph
+    val?: number;
     color?: string;
     level?: number; // 0 for user, 1 for person, 2 for lab
 }
@@ -64,7 +64,8 @@ export const mockGraphData: GraphData = {
             description: "The central user node.",
             sources: [],
             contacts: [],
-            color: "#ffffff",
+            val: 30,
+            color: "#e0f2f1", // Foreground (Teal 50)
             level: 0
         },
         {
@@ -74,7 +75,8 @@ export const mockGraphData: GraphData = {
             description: "Leading researcher in Neural Networks at Cyberdyne Systems.",
             sources: ["https://scholar.google.com/sarah_connor"],
             contacts: ["sarah.connor@cyberdyne.ai"],
-            color: "#ff00ff",
+            val: 20,
+            color: "#14b8a6", // Primary (Teal 500)
             level: 1
         },
         {
@@ -87,7 +89,8 @@ export const mockGraphData: GraphData = {
             hierarchy: [
                 { full_name: "Dr. Miles Dyson", role: "Director", contact: "miles@cyberdyne.ai" }
             ],
-            color: "#00ffff",
+            val: 30,
+            color: "#0ea5e9", // Secondary (Sky 500)
             level: 2
         },
         {
@@ -97,7 +100,8 @@ export const mockGraphData: GraphData = {
             description: "Seminal paper on distributed autonomous defense networks.",
             sources: ["https://arxiv.org/abs/skynet"],
             contacts: [],
-            color: "#ffff00",
+            val: 10,
+            color: "#06b6d4", // Accent (Cyan 500)
             level: 2
         },
         {
@@ -107,7 +111,8 @@ export const mockGraphData: GraphData = {
             description: "Experimental humanoid robotics platform.",
             sources: [],
             contacts: [],
-            color: "#00ff00",
+            val: 15,
+            color: "#22d3ee", // Cyan 400
             level: 3
         },
         {
@@ -117,7 +122,8 @@ export const mockGraphData: GraphData = {
             description: "Research into night-time urban surveillance.",
             sources: [],
             contacts: [],
-            color: "#ff0000",
+            val: 25,
+            color: "#38bdf8", // Sky 400
             level: 1
         },
         {
@@ -127,7 +133,7 @@ export const mockGraphData: GraphData = {
             description: "Director of Special Projects at Cyberdyne.",
             sources: [],
             contacts: ["miles@cyberdyne.ai"],
-            color: "#0000ff",
+            color: "#0ea5e9", // Secondary (Sky 500)
             level: 2
         },
         {
@@ -137,7 +143,7 @@ export const mockGraphData: GraphData = {
             description: "Top secret government project.",
             sources: [],
             contacts: [],
-            color: "#ff0000",
+            color: "#f43f5e", // Rose 500 (kept distinct but compatible)
             level: 3
         },
         {
@@ -147,7 +153,7 @@ export const mockGraphData: GraphData = {
             description: "Field commander for Section 9.",
             sources: [],
             contacts: [],
-            color: "#00ff00",
+            color: "#14b8a6", // Primary (Teal 500)
             level: 3
         },
         {
@@ -157,7 +163,7 @@ export const mockGraphData: GraphData = {
             description: "Elusive hacker entity.",
             sources: [],
             contacts: [],
-            color: "#000000",
+            color: "#0f172a", // Dark (Slate 900)
             level: 4
         },
         {
@@ -167,7 +173,7 @@ export const mockGraphData: GraphData = {
             description: "Public Security Section 9.",
             sources: [],
             contacts: [],
-            color: "#ffffff",
+            color: "#e0f2f1", // Foreground (Teal 50)
             level: 2
         }
     ],

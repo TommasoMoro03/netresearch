@@ -105,8 +105,8 @@ export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) =
                                         <Loader2 className="w-5 h-5 text-primary animate-spin" />
                                     </div>
                                 ) : step.status === "done" ? (
-                                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
-                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                                        <CheckCircle2 className="w-5 h-5 text-primary" />
                                     </div>
                                 ) : (
                                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border border-border">
