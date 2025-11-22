@@ -3,6 +3,7 @@ Utility functions for mapping OpenAlex API responses to Paper objects.
 """
 from typing import List, Dict, Any, Optional
 from app.schemas.agent import Paper
+from app.utils.abstract_fetcher import get_paper_abstract
 
 
 def map_openalex_work_to_paper(work: Dict[str, Any]) -> Paper:
@@ -31,10 +32,13 @@ def map_openalex_work_to_paper(work: Dict[str, Any]) -> Paper:
     if work.get("primary_topic"):
         topic = work["primary_topic"].get("display_name")
 
+    # Get abstract (from OpenAlex inverted index or Semantic Scholar)
+    abstract = get_paper_abstract(work)
+
     return Paper(
         title=work.get("title", "Untitled"),
         link=work.get("doi"),  # DOI field
-        abstract="[Abstract to be populated]",  # Placeholder for now
+        abstract=abstract,
         publication_year=work.get("publication_year"),
         topic=topic
     )
