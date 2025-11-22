@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import ForceGraph3D from 'react-force-graph-3d';
 import { GraphData, GraphNode, GraphLink } from '../services/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink, Mail, Building, User, FileText, Network } from 'lucide-react';
@@ -16,7 +17,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     const fgRef = useRef<any>();
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [selectedLink, setSelectedLink] = useState<GraphLink | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
 
     // Auto-rotate and Zoom sensitivity
@@ -24,7 +25,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
         if (fgRef.current) {
             const controls = fgRef.current.controls();
             if (controls) {
-                controls.zoomSpeed = 1; // Adjusted zoom sensitivity
+                controls.zoomSpeed = 3; // Adjusted zoom sensitivity
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.1;
             }
@@ -68,8 +69,11 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     };
 
     const handleNodeClick = (node: any) => {
+        // Prevent clicking the user node
+        if (node.id === 'user') return;
+
         setSelectedNode(node as GraphNode);
-        setIsDialogOpen(true);
+        setIsSheetOpen(true);
 
         // Aim at node from outside it
         const distance = 40;
@@ -83,6 +87,17 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     };
 
     const getNodeColor = (node: GraphNode) => {
+        if (node.level === 0) return '#808080'; // Gray for user
+
+        const level = node.level || 1;
+        const lightness = 40 + (level - 1) * 10; // Base 40%, +10% per level
+        const l = Math.min(lightness, 90); // Cap at 90%
+
+        if (node.type === 'person') {
+            return `hsl(210, 40%, ${l}%)`; // Sober Blue
+        } else if (node.type === 'lab') {
+            return `hsl(160, 40%, ${l}%)`; // Sober Teal
+        }
         return node.color || '#ffffff';
     };
 
@@ -102,7 +117,6 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                 graphData={data}
                 nodeLabel="name"
                 nodeColor={node => getNodeColor(node as GraphNode)}
-                nodeVal="val"
                 onNodeClick={handleNodeClick}
                 onNodeDrag={handleNodeDrag}
                 onLinkClick={handleLinkClick}
@@ -114,7 +128,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
 
                     // Determine size based on type
                     const size = node.type === 'person' ? 4 : 8;
-                    const color = node.color || '#ffffff';
+                    const color = getNodeColor(node as GraphNode);
 
                     // Sphere
                     const geometry = new THREE.SphereGeometry(size, 64, 64);
@@ -131,9 +145,14 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                     sprite.color = '#ffffff';
                     sprite.textHeight = 2;
                     sprite.position.y = size + 2;
-                    sprite.backgroundColor = '#00000080';
+
+                    // Add stroke for visibility without background box
+                    sprite.strokeColor = '#000000';
+                    sprite.strokeWidth = 1;
+
+                    // sprite.backgroundColor = '#00000080'; // Removed background shadow
                     sprite.padding = 1;
-                    sprite.borderRadius = 10; // Ensure fully rounded pill shape
+                    // sprite.borderRadius = 10; // No longer needed without background
 
                     // Ensure text is always visible on top
                     sprite.renderOrder = 999;
@@ -150,21 +169,21 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                 linkDirectionalParticleSpeed={0.005}
             />
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] bg-background/95 backdrop-blur-xl border-primary/20">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-display text-primary">
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent side="right" className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-xl border-l border-primary/20 overflow-y-auto">
+                    <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2 text-xl font-display text-primary">
                             {selectedNode && getNodeIcon(selectedNode.type)}
                             {selectedNode?.name}
-                        </DialogTitle>
-                        <DialogDescription className="text-muted-foreground">
+                        </SheetTitle>
+                        <SheetDescription className="text-muted-foreground">
                             {selectedNode?.type.charAt(0).toUpperCase() + selectedNode?.type.slice(1)}
-                        </DialogDescription>
-                    </DialogHeader>
+                        </SheetDescription>
+                    </SheetHeader>
 
                     {selectedNode && (
-                        <ScrollArea className="max-h-[60vh] pr-4">
-                            <div className="space-y-6 py-4">
+                        <div className="mt-6">
+                            <div className="space-y-6">
                                 <div className="space-y-2">
                                     <h4 className="text-sm font-medium text-foreground">Description</h4>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
@@ -227,10 +246,10 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                     </div>
                                 )}
                             </div>
-                        </ScrollArea>
+                        </div>
                     )}
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
 
             <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
                 <DialogContent className="sm:max-w-[400px] bg-background/95 backdrop-blur-xl border-primary/20">

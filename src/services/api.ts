@@ -15,8 +15,9 @@ export interface GraphNode {
     contacts: string[];
     hierarchy?: PersonHierarchy[];
     // Added for force-graph
-    val?: number;
+    // Added for force-graph
     color?: string;
+    level?: number; // 0 for user, 1 for person, 2 for lab
 }
 
 export interface GraphLink {
@@ -63,8 +64,8 @@ export const mockGraphData: GraphData = {
             description: "The central user node.",
             sources: [],
             contacts: [],
-            val: 30,
-            color: "#ffffff"
+            color: "#ffffff",
+            level: 0
         },
         {
             id: "n1",
@@ -73,8 +74,8 @@ export const mockGraphData: GraphData = {
             description: "Leading researcher in Neural Networks at Cyberdyne Systems.",
             sources: ["https://scholar.google.com/sarah_connor"],
             contacts: ["sarah.connor@cyberdyne.ai"],
-            val: 20,
-            color: "#ff00ff"
+            color: "#ff00ff",
+            level: 1
         },
         {
             id: "n2",
@@ -86,8 +87,8 @@ export const mockGraphData: GraphData = {
             hierarchy: [
                 { full_name: "Dr. Miles Dyson", role: "Director", contact: "miles@cyberdyne.ai" }
             ],
-            val: 30,
-            color: "#00ffff"
+            color: "#00ffff",
+            level: 2
         },
         {
             id: "n3",
@@ -96,8 +97,8 @@ export const mockGraphData: GraphData = {
             description: "Seminal paper on distributed autonomous defense networks.",
             sources: ["https://arxiv.org/abs/skynet"],
             contacts: [],
-            val: 10,
-            color: "#ffff00"
+            color: "#ffff00",
+            level: 2
         },
         {
             id: "n4",
@@ -106,8 +107,8 @@ export const mockGraphData: GraphData = {
             description: "Experimental humanoid robotics platform.",
             sources: [],
             contacts: [],
-            val: 15,
-            color: "#00ff00"
+            color: "#00ff00",
+            level: 3
         },
         {
             id: "n5",
@@ -116,8 +117,58 @@ export const mockGraphData: GraphData = {
             description: "Research into night-time urban surveillance.",
             sources: [],
             contacts: [],
-            val: 25,
-            color: "#ff0000"
+            color: "#ff0000",
+            level: 1
+        },
+        {
+            id: "n6",
+            name: "Dr. Miles Dyson",
+            type: "person",
+            description: "Director of Special Projects at Cyberdyne.",
+            sources: [],
+            contacts: ["miles@cyberdyne.ai"],
+            color: "#0000ff",
+            level: 2
+        },
+        {
+            id: "n7",
+            name: "Project 2501",
+            type: "lab",
+            description: "Top secret government project.",
+            sources: [],
+            contacts: [],
+            color: "#ff0000",
+            level: 3
+        },
+        {
+            id: "n8",
+            name: "Major Motoko",
+            type: "person",
+            description: "Field commander for Section 9.",
+            sources: [],
+            contacts: [],
+            color: "#00ff00",
+            level: 3
+        },
+        {
+            id: "n9",
+            name: "Puppet Master",
+            type: "person",
+            description: "Elusive hacker entity.",
+            sources: [],
+            contacts: [],
+            color: "#000000",
+            level: 4
+        },
+        {
+            id: "n10",
+            name: "Section 9",
+            type: "lab",
+            description: "Public Security Section 9.",
+            sources: [],
+            contacts: [],
+            color: "#ffffff",
+            level: 2
         }
     ],
     links: [
@@ -126,7 +177,14 @@ export const mockGraphData: GraphData = {
         { source: "n1", target: "n3", label: "Prof. Sarah Connor authored the seminal paper on Skynet Architecture.", distance: 0.3 },
         { source: "n2", target: "n4", label: "Cyberdyne Systems developed the T-800 Prototype.", distance: 0.8 },
         { source: "n3", target: "n4", label: "The Skynet Architecture paper describes the design of the T-800 Prototype.", distance: 0.4 },
-        { source: "n5", target: "n1", label: "Tech Noir Lab collaborates with Prof. Sarah Connor on surveillance research.", distance: 0.6 }
+        { source: "n5", target: "n1", label: "Tech Noir Lab collaborates with Prof. Sarah Connor on surveillance research.", distance: 0.6 },
+        { source: "n2", target: "n6", label: "Dr. Miles Dyson is the Director at Cyberdyne Systems.", distance: 0.3 },
+        { source: "n6", target: "n4", label: "Dr. Miles Dyson oversees the T-800 Prototype development.", distance: 0.4 },
+        { source: "n1", target: "n10", label: "Prof. Sarah Connor consults for Section 9.", distance: 0.7 },
+        { source: "n10", target: "n8", label: "Major Motoko leads the field operations for Section 9.", distance: 0.3 },
+        { source: "n8", target: "n7", label: "Major Motoko is investigating Project 2501.", distance: 0.5 },
+        { source: "n7", target: "n9", label: "Project 2501 is linked to the Puppet Master entity.", distance: 0.2 },
+        { source: "n9", target: "n4", label: "The Puppet Master attempted to hack the T-800 Prototype.", distance: 0.9 }
     ]
 };
 
