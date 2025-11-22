@@ -206,7 +206,10 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
             />
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="right" className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-xl border-l border-primary/20 overflow-visible">
+                <SheetContent
+                    side="right"
+                    className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-xl border-l border-primary/20 overflow-visible"
+                >
                     <div className="h-full overflow-y-auto pr-2">
                         <SheetHeader>
                             <SheetTitle className="flex items-center gap-2 text-xl font-display text-primary">

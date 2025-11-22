@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 
 interface ReasoningConsoleProps {
     runId: string;
-    onComplete: (graphData: GraphData) => void;
+    onComplete: (graphData: GraphData, steps: StepLog[]) => void;
 }
 
 export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) => {
@@ -37,7 +37,7 @@ export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) =
                     if (pollingInterval.current) clearInterval(pollingInterval.current);
                     // Small delay to let the user see the final step
                     setTimeout(() => {
-                        onComplete(response.graph_data!);
+                        onComplete(response.graph_data!, response.steps);
                     }, 1000);
                 }
             } catch (error) {

@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Upload, Search, Zap, Database, Brain, Network } from "lucide-react";
+import { Upload, Search, Zap, Database, Brain, Network, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import GraphVisualization from "@/components/GraphVisualization";
-import { GraphData } from "@/services/api";
+import { GraphData, StepLog } from "@/services/api";
 import { ReasoningConsole } from "@/components/ReasoningConsole";
 
 const Index = () => {
@@ -16,6 +18,7 @@ const Index = () => {
   const [searchStarted, setSearchStarted] = useState(false);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
+  const [reasoningSteps, setReasoningSteps] = useState<StepLog[]>([]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,11 +43,13 @@ const Index = () => {
     setQuery("");
     setGraphData(null);
     setRunId(null);
+    setReasoningSteps([]);
   };
 
-  const handleDiscoveryComplete = (data: GraphData) => {
+  const handleDiscoveryComplete = (data: GraphData, steps: StepLog[]) => {
     setIsSearching(false);
     setGraphData(data);
+    setReasoningSteps(steps);
     setIsComplete(true);
   };
 
@@ -174,7 +179,73 @@ const Index = () => {
               {/* Full-Screen Graph */}
               <div className="flex-1 flex items-center justify-center relative">
                 {graphData ? (
-                  <GraphVisualization data={graphData} />
+                  <>
+                    <GraphVisualization data={graphData} />
+
+                    {/* Show Sources Button */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          className="absolute bottom-6 right-6 gap-2 neon-glow"
+                          size="lg"
+                        >
+                          <FileText className="w-5 h-5" />
+                          Show Sources
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] bg-background/95 backdrop-blur-xl border-primary/20">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl font-display text-primary flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            Research Sources
+                          </DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="h-[60vh] pr-4">
+                          <div className="space-y-4">
+                            {reasoningSteps
+                              .filter(step => step.sources && step.sources.length > 0)
+                              .map((step, idx) => (
+                                <div key={idx} className="space-y-2">
+                                  <h3 className="text-sm font-semibold text-foreground capitalize">
+                                    {step.step_type} Step
+                                  </h3>
+                                  <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                                    {step.sources?.map((source, sourceIdx) => (
+                                      <a
+                                        key={sourceIdx}
+                                        href={source.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                                      >
+                                        <div className="mt-0.5">
+                                          {source.type === 'paper' && <FileText className="w-4 h-4 text-primary" />}
+                                          {source.type === 'author' && <Brain className="w-4 h-4 text-secondary" />}
+                                          {source.type === 'institution' && <Network className="w-4 h-4 text-accent" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                            {source.title}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            {source.url}
+                                          </p>
+                                        </div>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            {reasoningSteps.filter(step => step.sources && step.sources.length > 0).length === 0 && (
+                              <p className="text-center text-muted-foreground py-8">
+                                No sources available
+                              </p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
                     <div className="text-center space-y-4">
