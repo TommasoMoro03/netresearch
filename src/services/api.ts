@@ -1,9 +1,4 @@
-// Removed incorrect import 
-// Actually Literal is likely from typescript or a library like zod or just a type. 
-// The user request showed: status: Literal["running", "completed"]
-// This implies it's a type. I'll use a type alias or just string for now if I can't find the import.
-// Wait, `Literal` is a python thing from `typing`. In TS it's just a union type.
-// I will translate the python models to TS interfaces.
+// Type definitions for the Agent Reasoning Console
 
 export interface PersonHierarchy {
     full_name: string;
@@ -36,19 +31,27 @@ export interface GraphData {
     links: GraphLink[];
 }
 
+// Updated StepLog interface based on user requirements
 export interface StepLog {
-    id: number;
-    step: string;
+    step_id: string;
+    step_type: "intent" | "filters" | "extraction" | "exploration" | "connections" | "graph";
     message: string;
-    sources: { name: string; url: string; }[];
-    timestamp: Date;
+    status: "in_progress" | "done" | "pending";
+    timestamp: string;
+    details?: Record<string, string>;
+    sources?: Array<{
+        title: string;
+        url: string;
+        type: "paper" | "author" | "institution";
+    }>;
 }
 
 export interface AgentStatusResponse {
     run_id: string;
-    status: "running" | "completed";
+    status: "running" | "completed" | "failed";
+    progress: number; // 0-100
     steps: StepLog[];
-    graph_data?: GraphData;
+    graph_data?: GraphData; // Optional, present when completed
 }
 
 export const mockGraphData: GraphData = {
@@ -89,7 +92,7 @@ export const mockGraphData: GraphData = {
         {
             id: "n3",
             name: "Skynet Architecture",
-            type: "lab", // Changed to lab as per request for only person/lab types, or maybe it should be a paper? User said "The node type is only person or lab". I'll stick to that.
+            type: "lab",
             description: "Seminal paper on distributed autonomous defense networks.",
             sources: ["https://arxiv.org/abs/skynet"],
             contacts: [],
@@ -99,7 +102,7 @@ export const mockGraphData: GraphData = {
         {
             id: "n4",
             name: "T-800 Prototype",
-            type: "lab", // Assuming project -> lab for now to satisfy "only person or lab"
+            type: "lab",
             description: "Experimental humanoid robotics platform.",
             sources: [],
             contacts: [],
@@ -127,13 +130,120 @@ export const mockGraphData: GraphData = {
     ]
 };
 
+// Mock data for simulation
+const baseSteps: StepLog[] = [
+    {
+        step_id: "1",
+        step_type: "intent",
+        message: "Analyzing user intent...",
+        status: "done",
+        timestamp: new Date().toISOString(),
+        details: { "Confidence": "0.98", "Intent": "Research Discovery" }
+    },
+    {
+        step_id: "2",
+        step_type: "filters",
+        message: "Applying search filters...",
+        status: "done",
+        timestamp: new Date().toISOString(),
+        details: { "Topic": "AI", "Region": "Global" }
+    },
+    {
+        step_id: "3",
+        step_type: "extraction",
+        message: "Extracting entities from sources...",
+        status: "in_progress",
+        timestamp: new Date().toISOString(),
+        sources: [
+            { title: "Attention Is All You Need", url: "https://arxiv.org/abs/1706.03762", type: "paper" },
+            { title: "Yann LeCun", url: "https://scholar.google.com", type: "author" }
+        ]
+    },
+    {
+        step_id: "4",
+        step_type: "connections",
+        message: "Building citation network...",
+        status: "pending",
+        timestamp: new Date().toISOString(),
+        details: { "Nodes": "15", "Edges": "42" }
+    },
+    {
+        step_id: "5",
+        step_type: "graph",
+        message: "Finalizing graph visualization...",
+        status: "pending",
+        timestamp: new Date().toISOString()
+    }
+];
+
+// Simple in-memory store for mock runs
+const mockRuns: Record<string, { startTime: number }> = {};
+
+export const getAgentStatus = async (runId: string): Promise<AgentStatusResponse> => {
+    // Initialize run if not exists
+    if (!mockRuns[runId]) {
+        mockRuns[runId] = { startTime: Date.now() };
+    }
+
+    const elapsed = Date.now() - mockRuns[runId].startTime;
+
+    // Simulate progression based on time
+    // 0-2s: Steps 1 & 2 done, 3 in progress
+    // 2-4s: Step 3 done, 4 in progress
+    // 4-6s: Step 4 done, 5 in progress
+    // >6s: All done, completed
+
+    let currentSteps = [...baseSteps];
+    let status: "running" | "completed" | "failed" = "running";
+    let progress = 0;
+
+    if (elapsed < 2000) {
+        // Initial state
+        progress = 30;
+    } else if (elapsed < 4000) {
+        // Advance to step 4
+        currentSteps = currentSteps.map(s => {
+            if (s.step_id === "3") return { ...s, status: "done" };
+            if (s.step_id === "4") return { ...s, status: "in_progress" };
+            return s;
+        });
+        progress = 60;
+    } else if (elapsed < 6000) {
+        // Advance to step 5
+        currentSteps = currentSteps.map(s => {
+            if (s.step_id === "3" || s.step_id === "4") return { ...s, status: "done" };
+            if (s.step_id === "5") return { ...s, status: "in_progress" };
+            return s;
+        });
+        progress = 90;
+    } else {
+        // Complete
+        currentSteps = currentSteps.map(s => ({ ...s, status: "done" }));
+        status = "completed";
+        progress = 100;
+    }
+
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                run_id: runId,
+                status: status,
+                progress: progress,
+                steps: currentSteps,
+                graph_data: status === "completed" ? mockGraphData : undefined
+            });
+        }, 300); // Fast response
+    });
+};
+
 export const getMockStatus = (runId: string): Promise<AgentStatusResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({
                 run_id: runId,
                 status: "completed",
-                steps: [], // We can populate this if needed, but the graph is the focus
+                progress: 100,
+                steps: baseSteps.map(s => ({ ...s, status: "done" })),
                 graph_data: mockGraphData
             });
         }, 500);

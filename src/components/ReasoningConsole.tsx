@@ -1,0 +1,190 @@
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, ChevronDown, ChevronRight, Loader2, ExternalLink, FileText, User, Building2 } from "lucide-react";
+import { getAgentStatus, StepLog, GraphData } from "@/services/api";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+
+interface ReasoningConsoleProps {
+    runId: string;
+    onComplete: (graphData: GraphData) => void;
+}
+
+export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) => {
+    const [steps, setSteps] = useState<StepLog[]>([]);
+    const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const pollingInterval = useRef<NodeJS.Timeout>();
+
+    // Poll for updates
+    useEffect(() => {
+        const poll = async () => {
+            try {
+                const response = await getAgentStatus(runId);
+                setSteps(response.steps);
+
+                // Auto-expand the current running step
+                const currentStep = response.steps.find(s => s.status === "in_progress");
+                if (currentStep) {
+                    setExpandedSteps(prev => {
+                        const newSet = new Set(prev);
+                        newSet.add(currentStep.step_id);
+                        return newSet;
+                    });
+                }
+
+                if (response.status === "completed" && response.graph_data) {
+                    if (pollingInterval.current) clearInterval(pollingInterval.current);
+                    // Small delay to let the user see the final step
+                    setTimeout(() => {
+                        onComplete(response.graph_data!);
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error("Polling failed:", error);
+            }
+        };
+
+        // Initial poll
+        poll();
+
+        // Set up interval
+        pollingInterval.current = setInterval(poll, 1000);
+
+        return () => {
+            if (pollingInterval.current) clearInterval(pollingInterval.current);
+        };
+    }, [runId, onComplete]);
+
+    // Auto-scroll to bottom
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [steps]);
+
+    const toggleExpand = (stepId: string) => {
+        setExpandedSteps(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(stepId)) {
+                newSet.delete(stepId);
+            } else {
+                newSet.add(stepId);
+            }
+            return newSet;
+        });
+    };
+
+    const getSourceIcon = (type: string) => {
+        switch (type) {
+            case "paper": return <FileText className="w-3 h-3" />;
+            case "author": return <User className="w-3 h-3" />;
+            case "institution": return <Building2 className="w-3 h-3" />;
+            default: return <ExternalLink className="w-3 h-3" />;
+        }
+    };
+
+    return (
+        <div className="w-full max-w-3xl mx-auto space-y-4 p-4">
+            {steps.map((step, index) => {
+                const isExpanded = expandedSteps.has(step.step_id) || step.status === "in_progress";
+                const isLast = index === steps.length - 1;
+
+                return (
+                    <div key={step.step_id} className="relative">
+                        {/* Connector Line */}
+                        {!isLast && (
+                            <div className="absolute left-[19px] top-10 bottom-[-16px] w-px bg-border/50" />
+                        )}
+
+                        <div className="flex gap-4">
+                            {/* Status Icon */}
+                            <div className="relative z-10">
+                                {step.status === "in_progress" ? (
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                    </div>
+                                ) : step.status === "done" ? (
+                                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                    </div>
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border border-border">
+                                        <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 pt-1">
+                                <div
+                                    className="flex items-center gap-2 cursor-pointer group"
+                                    onClick={() => toggleExpand(step.step_id)}
+                                >
+                                    <h3 className={cn(
+                                        "font-medium text-sm",
+                                        step.status === "in_progress" ? "text-foreground" : "text-muted-foreground"
+                                    )}>
+                                        {step.message}
+                                    </h3>
+                                    {step.status === "done" && (
+                                        <div className="text-muted-foreground/50 group-hover:text-foreground transition-colors">
+                                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Details & Sources (Collapsible) */}
+                                {isExpanded && (
+                                    <div className="mt-3 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                                        {/* Details Badges */}
+                                        {step.details && Object.keys(step.details).length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {Object.entries(step.details).map(([key, value]) => (
+                                                    <Badge key={key} variant="secondary" className="text-xs font-normal bg-secondary/50">
+                                                        <span className="opacity-70 mr-1">{key}:</span>
+                                                        {value}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Sources Grid */}
+                                        {step.sources && step.sources.length > 0 && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {step.sources.map((source, idx) => (
+                                                    <a
+                                                        key={idx}
+                                                        href={source.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="block"
+                                                    >
+                                                        <Card className="p-3 hover:bg-muted/50 transition-colors border-border/50 flex items-start gap-3 group">
+                                                            <div className="mt-0.5 p-1.5 rounded-md bg-background border border-border/50 text-muted-foreground group-hover:text-primary group-hover:border-primary/30 transition-colors">
+                                                                {getSourceIcon(source.type)}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                                                                    {source.title}
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                                                    {new URL(source.url).hostname}
+                                                                </p>
+                                                            </div>
+                                                        </Card>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+            <div ref={scrollRef} />
+        </div>
+    );
+};
