@@ -1,23 +1,33 @@
 // Type definitions for the Agent Reasoning Console
 
-export interface PersonHierarchy {
-    full_name: string;
-    role: string;
-    contact?: string;
+export interface Contact {
+    email?: string;
+    website?: string;
+}
+
+export interface Paper {
+    title: string;
+    link?: string;
+    abstract?: string;
+    publication_year?: number;
+    topic?: string;
 }
 
 export interface GraphNode {
     id: string;
     name: string;
-    type: string;
+    type: string; // "professor", "laboratory"
+    institution?: string;
     description: string;
-    sources: string[];
-    contacts: string[];
-    hierarchy?: PersonHierarchy[];
+    contacts: Contact;
+    works_count?: number;
+    cited_by_count?: number;
+    h_index?: number;
+    link_orcid?: string;
+    papers?: Paper[];
     // Added for force-graph
-    val?: number;
     color?: string;
-    level?: number; // 0 for user, 1 for person, 2 for lab
+    level?: number; // 0 for user, 1 for professor, 2 for laboratory
 }
 
 export interface GraphLink {
@@ -32,7 +42,6 @@ export interface GraphData {
     links: GraphLink[];
 }
 
-// Updated StepLog interface based on user requirements
 export interface StepLog {
     step_id: string;
     step_type: "intent" | "filters" | "extraction" | "exploration" | "connections" | "graph";
@@ -60,120 +69,112 @@ export const mockGraphData: GraphData = {
         {
             id: "user",
             name: "user",
-            type: "person",
+            type: "person", // Keeping as person for user node, or maybe "user"? Let's stick to "person" for now or "user" if distinct. The user said "professor" or "laboratory". Let's use "professor" for people-like things or maybe a special type. The prompt said "The node type is only person or lab" previously, now "professor", "laboratory". I'll use "professor" for people and "laboratory" for labs. For the user node, I'll keep it as "user" or "professor" but with level 0. Let's use "professor" for consistency or maybe just "user" and handle it. Actually, the user node is special. I'll keep type "person" for user to distinguish, or map it to "professor". Let's use "professor" for user to be safe with types, but maybe "user" is better. I'll use "professor" for now but name it "user".
             description: "The central user node.",
-            sources: [],
-            contacts: [],
-            val: 30,
-            color: "#e0f2f1", // Foreground (Teal 50)
+            contacts: {},
+            color: "#e0f2f1",
             level: 0
         },
         {
             id: "n1",
             name: "Prof. Sarah Connor",
-            type: "person",
-            description: "Leading researcher in Neural Networks at Cyberdyne Systems.",
-            sources: ["https://scholar.google.com/sarah_connor"],
-            contacts: ["sarah.connor@cyberdyne.ai"],
-            val: 20,
-            color: "#14b8a6", // Primary (Teal 500)
+            type: "professor",
+            institution: "Cyberdyne Systems",
+            description: "Leading researcher in Neural Networks.",
+            contacts: { email: "sarah.connor@cyberdyne.ai", website: "https://scholar.google.com/sarah_connor" },
+            works_count: 42,
+            cited_by_count: 1337,
+            h_index: 25,
+            papers: [
+                { title: "Neural Networks for Time Travel", publication_year: 2029, link: "https://arxiv.org/abs/time-travel" }
+            ],
+            color: "#14b8a6",
             level: 1
         },
         {
             id: "n2",
             name: "Cyberdyne Systems",
-            type: "lab",
-            description: "Advanced AI research laboratory focusing on autonomous systems.",
-            sources: ["https://cyberdyne.ai"],
-            contacts: ["contact@cyberdyne.ai"],
-            hierarchy: [
-                { full_name: "Dr. Miles Dyson", role: "Director", contact: "miles@cyberdyne.ai" }
-            ],
-            val: 30,
-            color: "#0ea5e9", // Secondary (Sky 500)
+            type: "laboratory",
+            description: "Advanced AI research laboratory.",
+            contacts: { email: "contact@cyberdyne.ai", website: "https://cyberdyne.ai" },
+            color: "#0ea5e9",
             level: 2
         },
         {
             id: "n3",
             name: "Skynet Architecture",
-            type: "lab",
+            type: "laboratory", // Representing paper/project as lab for now or maybe just a node. The user said "professor" or "laboratory". I'll stick to that.
             description: "Seminal paper on distributed autonomous defense networks.",
-            sources: ["https://arxiv.org/abs/skynet"],
-            contacts: [],
-            val: 10,
-            color: "#06b6d4", // Accent (Cyan 500)
+            contacts: {},
+            color: "#06b6d4",
             level: 2
         },
         {
             id: "n4",
             name: "T-800 Prototype",
-            type: "lab",
+            type: "laboratory",
             description: "Experimental humanoid robotics platform.",
-            sources: [],
-            contacts: [],
-            val: 15,
-            color: "#22d3ee", // Cyan 400
+            contacts: {},
+            color: "#22d3ee",
             level: 3
         },
         {
             id: "n5",
             name: "Tech Noir Lab",
-            type: "lab",
+            type: "laboratory",
             description: "Research into night-time urban surveillance.",
-            sources: [],
-            contacts: [],
-            val: 25,
-            color: "#38bdf8", // Sky 400
+            contacts: {},
+            color: "#38bdf8",
             level: 1
         },
         {
             id: "n6",
             name: "Dr. Miles Dyson",
-            type: "person",
-            description: "Director of Special Projects at Cyberdyne.",
-            sources: [],
-            contacts: ["miles@cyberdyne.ai"],
-            color: "#0ea5e9", // Secondary (Sky 500)
+            type: "professor",
+            institution: "Cyberdyne Systems",
+            description: "Director of Special Projects.",
+            contacts: { email: "miles@cyberdyne.ai" },
+            works_count: 15,
+            cited_by_count: 500,
+            h_index: 12,
+            color: "#0ea5e9",
             level: 2
         },
         {
             id: "n7",
             name: "Project 2501",
-            type: "lab",
+            type: "laboratory",
             description: "Top secret government project.",
-            sources: [],
-            contacts: [],
-            color: "#f43f5e", // Rose 500 (kept distinct but compatible)
+            contacts: {},
+            color: "#f43f5e",
             level: 3
         },
         {
             id: "n8",
             name: "Major Motoko",
-            type: "person",
-            description: "Field commander for Section 9.",
-            sources: [],
-            contacts: [],
-            color: "#14b8a6", // Primary (Teal 500)
+            type: "professor",
+            institution: "Section 9",
+            description: "Field commander.",
+            contacts: {},
+            color: "#14b8a6",
             level: 3
         },
         {
             id: "n9",
             name: "Puppet Master",
-            type: "person",
+            type: "professor",
             description: "Elusive hacker entity.",
-            sources: [],
-            contacts: [],
-            color: "#0f172a", // Dark (Slate 900)
+            contacts: {},
+            color: "#0f172a",
             level: 4
         },
         {
             id: "n10",
             name: "Section 9",
-            type: "lab",
+            type: "laboratory",
             description: "Public Security Section 9.",
-            sources: [],
-            contacts: [],
-            color: "#e0f2f1", // Foreground (Teal 50)
+            contacts: {},
+            color: "#e0f2f1",
             level: 2
         }
     ],

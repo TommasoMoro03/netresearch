@@ -105,9 +105,9 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
         const lightness = 40 + (level - 1) * 10; // Base 40%, +10% per level
         const l = Math.min(lightness, 90); // Cap at 90%
 
-        if (node.type === 'person') {
+        if (node.type === 'professor' || node.type === 'person') {
             return `hsl(210, 40%, ${l}%)`; // Sober Blue
-        } else if (node.type === 'lab') {
+        } else if (node.type === 'laboratory' || node.type === 'lab') {
             return `hsl(160, 40%, ${l}%)`; // Sober Teal
         }
         return node.color || '#ffffff';
@@ -115,7 +115,9 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
 
     const getNodeIcon = (type: string) => {
         switch (type) {
+            case 'professor':
             case 'person': return <User className="w-4 h-4" />;
+            case 'laboratory':
             case 'lab': return <Building className="w-4 h-4" />;
             case 'paper': return <FileText className="w-4 h-4" />;
             default: return <Network className="w-4 h-4" />;
@@ -139,7 +141,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                     const group = new THREE.Group();
 
                     // Determine size based on type
-                    const size = node.type === 'person' ? 4 : 8;
+                    const size = node.type === 'professor' || node.type === 'person' ? 4 : 8;
                     const color = getNodeColor(node as GraphNode);
 
                     // Outer glass sphere with enhanced realism
@@ -217,7 +219,8 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                 {selectedNode?.name}
                             </SheetTitle>
                             <SheetDescription className="text-muted-foreground">
-                                {selectedNode?.type.charAt(0).toUpperCase() + selectedNode?.type.slice(1)}
+                                {selectedNode?.type === 'professor' ? 'Professor' : selectedNode?.type === 'laboratory' ? 'Laboratory' : 'Person'}
+                                {selectedNode?.institution && ` • ${selectedNode.institution}`}
                             </SheetDescription>
                         </SheetHeader>
 
@@ -231,56 +234,97 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                         </p>
                                     </div>
 
-                                    {selectedNode.hierarchy && selectedNode.hierarchy.length > 0 && (
-                                        <div className="space-y-3">
-                                            <h4 className="text-sm font-medium text-foreground">Key People</h4>
-                                            <div className="grid gap-2">
-                                                {selectedNode.hierarchy.map((person, idx) => (
-                                                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 border border-border/50">
-                                                        <div>
-                                                            <p className="text-sm font-medium">{person.full_name}</p>
-                                                            <p className="text-xs text-muted-foreground">{person.role}</p>
-                                                        </div>
-                                                        {person.contact && (
-                                                            <a href={`mailto:${person.contact}`} className="text-primary hover:text-primary/80">
-                                                                <Mail className="w-4 h-4" />
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    {/* Stats Section */}
+                                    {(selectedNode.works_count !== undefined || selectedNode.cited_by_count !== undefined || selectedNode.h_index !== undefined) && (
+                                        <div className="grid grid-cols-3 gap-4 py-4 border-y border-border/50">
+                                            {selectedNode.works_count !== undefined && (
+                                                <div className="text-center">
+                                                    <div className="text-2xl font-bold text-primary">{selectedNode.works_count}</div>
+                                                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Works</div>
+                                                </div>
+                                            )}
+                                            {selectedNode.cited_by_count !== undefined && (
+                                                <div className="text-center border-l border-border/50">
+                                                    <div className="text-2xl font-bold text-primary">{selectedNode.cited_by_count}</div>
+                                                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Citations</div>
+                                                </div>
+                                            )}
+                                            {selectedNode.h_index !== undefined && (
+                                                <div className="text-center border-l border-border/50">
+                                                    <div className="text-2xl font-bold text-primary">{selectedNode.h_index}</div>
+                                                    <div className="text-xs text-muted-foreground uppercase tracking-wider">H-Index</div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
-                                    {selectedNode.contacts && selectedNode.contacts.length > 0 && (
+                                    {/* Contacts */}
+                                    {(selectedNode.contacts?.email || selectedNode.contacts?.website || selectedNode.link_orcid) && (
                                         <div className="space-y-2">
                                             <h4 className="text-sm font-medium text-foreground">Contact & Links</h4>
                                             <div className="flex flex-wrap gap-2">
-                                                {selectedNode.contacts.map((contact, idx) => (
-                                                    <Badge key={idx} variant="outline" className="gap-1">
-                                                        <Mail className="w-3 h-3" />
-                                                        {contact}
-                                                    </Badge>
-                                                ))}
+                                                {selectedNode.contacts?.email && (
+                                                    <a href={`mailto:${selectedNode.contacts.email}`} className="no-underline">
+                                                        <Badge variant="outline" className="gap-1 hover:bg-primary/10 transition-colors cursor-pointer">
+                                                            <Mail className="w-3 h-3" />
+                                                            {selectedNode.contacts.email}
+                                                        </Badge>
+                                                    </a>
+                                                )}
+                                                {selectedNode.contacts?.website && (
+                                                    <a href={selectedNode.contacts.website} target="_blank" rel="noopener noreferrer" className="no-underline">
+                                                        <Badge variant="outline" className="gap-1 hover:bg-primary/10 transition-colors cursor-pointer">
+                                                            <ExternalLink className="w-3 h-3" />
+                                                            Website
+                                                        </Badge>
+                                                    </a>
+                                                )}
+                                                {selectedNode.link_orcid && (
+                                                    <a href={selectedNode.link_orcid} target="_blank" rel="noopener noreferrer" className="no-underline">
+                                                        <Badge variant="outline" className="gap-1 hover:bg-primary/10 transition-colors cursor-pointer">
+                                                            <span className="font-bold text-[10px]">iD</span>
+                                                            ORCID
+                                                        </Badge>
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     )}
 
-                                    {selectedNode.sources && selectedNode.sources.length > 0 && (
-                                        <div className="space-y-2">
-                                            <h4 className="text-sm font-medium text-foreground">Sources</h4>
+                                    {/* Papers */}
+                                    {selectedNode.papers && selectedNode.papers.length > 0 && (
+                                        <div className="space-y-3">
+                                            <h4 className="text-sm font-medium text-foreground">Papers & Publications</h4>
                                             <div className="flex flex-col gap-2">
-                                                {selectedNode.sources.map((source, idx) => (
-                                                    <a
-                                                        key={idx}
-                                                        href={source}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center gap-2 text-xs text-primary hover:underline truncate"
-                                                    >
-                                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                                        {source}
-                                                    </a>
+                                                {selectedNode.papers.map((paper, idx) => (
+                                                    <div key={idx} className="p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <h5 className="text-sm font-medium text-foreground leading-snug">{paper.title}</h5>
+                                                            {paper.publication_year && (
+                                                                <span className="text-xs text-muted-foreground whitespace-nowrap px-1.5 py-0.5 rounded bg-background border border-border/50">
+                                                                    {paper.publication_year}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {paper.topic && (
+                                                            <p className="text-xs text-primary mt-1">{paper.topic}</p>
+                                                        )}
+                                                        {paper.abstract && (
+                                                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                                {paper.abstract}
+                                                            </p>
+                                                        )}
+                                                        {paper.link && (
+                                                            <a
+                                                                href={paper.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                                                            >
+                                                                View Paper <ExternalLink className="w-3 h-3" />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 ))}
                                             </div>
                                         </div>
