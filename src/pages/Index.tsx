@@ -3,6 +3,8 @@ import { Upload, Search, Zap, Database, Brain, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import GraphVisualization from "@/components/GraphVisualization";
+import { getMockStatus, GraphData } from "@/services/api";
 
 interface LogEntry {
   id: number;
@@ -87,6 +89,7 @@ const Index = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [searchStarted, setSearchStarted] = useState(false);
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const stepIndexRef = useRef(0);
 
@@ -103,7 +106,11 @@ const Index = () => {
       if (stepIndexRef.current >= simulatedSteps.length) {
         setIsSearching(false);
         // Wait a bit before showing the graph
-        setTimeout(() => {
+        setTimeout(async () => {
+          const response = await getMockStatus("mock-run-id");
+          if (response.graph_data) {
+            setGraphData(response.graph_data);
+          }
           setIsComplete(true);
         }, 1000);
         clearInterval(interval);
@@ -138,6 +145,7 @@ const Index = () => {
     setIsSearching(true);
     setIsComplete(false);
     setLogs([]);
+    setGraphData(null);
     stepIndexRef.current = 0;
   };
 
@@ -147,6 +155,7 @@ const Index = () => {
     setIsComplete(false);
     setLogs([]);
     setQuery("");
+    setGraphData(null);
     stepIndexRef.current = 0;
   };
 
@@ -154,7 +163,7 @@ const Index = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Animated background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20" />
-      
+
       {/* Radial gradient overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.15),transparent_50%)]" />
 
@@ -231,10 +240,10 @@ const Index = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
                           <SelectItem value="10">10</SelectItem>
                           <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -256,8 +265,8 @@ const Index = () => {
             // Full-Screen Graph View
             <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
               {/* Minimal Header */}
-              <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10">
-                <div className="flex items-center gap-3">
+              <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-10 pointer-events-none">
+                <div className="flex items-center gap-3 pointer-events-auto">
                   <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center neon-glow">
                     <Brain className="w-6 h-6 text-primary" />
                   </div>
@@ -270,29 +279,30 @@ const Index = () => {
                   onClick={handleReset}
                   variant="outline"
                   size="sm"
-                  className="border-border/50 hover:border-primary"
+                  className="border-border/50 hover:border-primary pointer-events-auto"
                 >
                   New Search
                 </Button>
               </div>
 
               {/* Full-Screen Graph */}
-              <div className="flex-1 flex items-center justify-center">
-                <div className="w-full h-full bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto neon-glow">
-                      <Network className="w-12 h-12 text-primary" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-2xl font-display font-bold text-primary">
-                        3D Graph Visualization
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Interactive network with {maxNodes} nodes
-                      </p>
+              <div className="flex-1 flex items-center justify-center relative">
+                {graphData ? (
+                  <GraphVisualization data={graphData} />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+                    <div className="text-center space-y-4">
+                      <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto neon-glow animate-pulse">
+                        <Network className="w-12 h-12 text-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-2xl font-display font-bold text-primary">
+                          Loading Graph...
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           ) : (
@@ -308,16 +318,15 @@ const Index = () => {
                     <div key={log.id} className="space-y-3">
                       {/* Step header */}
                       <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isCurrentStep ? 'bg-primary/20 neon-glow' : 'bg-muted/20'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isCurrentStep ? 'bg-primary/20 neon-glow' : 'bg-muted/20'
+                          }`}>
                           <Search className={`w-5 h-5 ${isCurrentStep ? 'text-primary' : 'text-muted-foreground'}`} />
                         </div>
                         <div className="flex-1 space-y-2">
                           <h3 className={`font-medium ${isCurrentStep ? 'text-foreground' : 'text-muted-foreground'}`}>
                             {log.message}
                           </h3>
-                          
+
                           {/* Sources - only show for current step */}
                           {isCurrentStep && log.sources.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-3">
@@ -335,7 +344,7 @@ const Index = () => {
                                     </div>
                                     <span className="text-foreground">{source.name}</span>
                                   </button>
-                                  
+
                                   {/* Expanded URL */}
                                   {expandedSource === `${log.id}-${idx}` && (
                                     <div className="absolute top-full left-0 mt-2 p-3 rounded-lg bg-background border border-border shadow-lg z-10 min-w-[300px] animate-fade-in">
@@ -348,7 +357,7 @@ const Index = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Connector line */}
                       {index < logs.length - 1 && (
                         <div className="ml-5 w-px h-4 bg-border/50" />
