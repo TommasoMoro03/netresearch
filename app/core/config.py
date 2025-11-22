@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from functools import lru_cache
 
 
@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "NetResearch"
 
     # Together AI Configuration
-    TOGETHER_API_KEY: str = Field(
-        ...,
+    TOGETHER_API_KEY: Optional[str] = Field(
+        default=None,
         description="Together AI API key (provided by hackathon organizers)"
     )
     TOGETHER_BASE_URL: str = Field(
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
         description="Together AI API base URL"
     )
     MODEL_NAME: str = Field(
-        default="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        default="moonshotai/Kimi-K2-Instruct-0905",
         description="Model name from Together AI catalog"
     )
 
@@ -85,11 +85,9 @@ class Settings(BaseSettings):
             ```
         """
         return {
-            "model": self.MODEL_NAME,
-            "api_key": self.TOGETHER_API_KEY,
-            "base_url": self.TOGETHER_BASE_URL,
-            "temperature": 0.7,
-            "max_tokens": 4096,
+            "name": "TogetherAI_Agent",
+            "model_id": self.MODEL_NAME,
+            "url": self.TOGETHER_BASE_URL,
         }
 
 

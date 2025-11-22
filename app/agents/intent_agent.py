@@ -9,8 +9,9 @@ from app.prompts.intent_extraction import (
     INTENT_EXTRACTION_USER,
     CV_CONTEXT_TEMPLATE
 )
-from app.core.llm_factory import get_openai_client
-from app.core.config import settings
+from app.core.llm_factory import get_llm_config
+from pyagentspec import Agent
+from wayflowcore.agentspec import AgentSpecLoader
 
 
 class IntentExtractionAgent:
@@ -19,8 +20,18 @@ class IntentExtractionAgent:
     """
 
     def __init__(self):
-        self.client = get_openai_client()
-        self.model = settings.MODEL_NAME
+
+        self.llm_config = get_llm_config()
+        
+        # Create AgentSpec agent
+        self.spec_agent = Agent(
+            name="intent_extractor",
+            system_prompt=INTENT_EXTRACTION_SYSTEM,
+            llm_config=self.llm_config
+        )
+        
+        # Load with Wayflow
+        self.agent = AgentSpecLoader().load_component(self.spec_agent)
 
     def extract_filters(
         self,
@@ -53,20 +64,23 @@ class IntentExtractionAgent:
             cv_context=cv_context
         )
 
-        # Call LLM
+        # Call LLM via Wayflow
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": INTENT_EXTRACTION_SYSTEM},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.3,  # Lower temperature for more consistent extraction
-                max_tokens=500
-            )
-
-            # Parse JSON response
-            content = response.choices[0].message.content.strip()
+            # Start conversation
+            conv = self.agent.start_conversation()
+            conv.append_user_message(user_message)
+            
+            # Execute
+            conv.execute()
+            
+            # Get response
+            messages = conv.get_messages()
+            if not messages:
+                raise ValueError("No response from agent")
+                
+            # Assuming the last message is from the assistant
+            last_message = messages[-1]
+            content = last_message.content.strip()
 
             # Try to extract JSON if wrapped in markdown code blocks
             if content.startswith("```"):

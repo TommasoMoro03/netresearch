@@ -53,23 +53,25 @@ def get_llm_config() -> Any:
     """
     Factory function to get LLM config for pyagentspec.
 
-    Since Together AI uses OpenAI-compatible API, we use OpenAiConfig from pyagentspec.
+    Since Together AI uses OpenAI-compatible API, we use OpenAICompatibleConfig from pyagentspec.
 
     Returns:
         LLM config object ready for pyagentspec
 
     Example usage with pyagentspec:
         ```python
-        from pyagentspec import OpenAiConfig
+        from pyagentspec.llms import OpenAICompatibleConfig
 
         llm_config = get_llm_config()
-        # llm_config is an OpenAiConfig configured for Together AI
+        # llm_config is an OpenAICompatibleConfig configured for Together AI
         ```
     """
-    # Return the config dict for now
-    # When pyagentspec is installed, uncomment below:
-    # from pyagentspec import OpenAiConfig
-    # config_dict = settings.get_agent_spec_llm_config()
-    # return OpenAiConfig(**config_dict)
-
-    return settings.get_agent_spec_llm_config()
+    import os
+    from pyagentspec.llms import OpenAiCompatibleConfig
+    
+    # Set OPENAI_API_KEY env var as required by pyagentspec/wayflow for OpenAI compatible backends
+    if settings.TOGETHER_API_KEY:
+        os.environ["OPENAI_API_KEY"] = settings.TOGETHER_API_KEY
+        
+    config_dict = settings.get_agent_spec_llm_config()
+    return OpenAiCompatibleConfig(**config_dict)
