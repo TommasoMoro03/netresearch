@@ -1,12 +1,14 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import ForceGraph3D from 'react-force-graph-3d';
-import { GraphData, GraphNode, GraphLink } from '../services/api';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { GraphData, GraphNode, GraphLink, generateEmail, sendEmail } from '../services/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ExternalLink, Mail, Building, User, FileText, Network } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ExternalLink, Mail, Building, User, FileText, Network, Loader2, Send } from 'lucide-react';
 import SpriteText from 'three-spritetext';
 
 interface GraphVisualizationProps {
@@ -21,7 +23,43 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
     const [sheetWidth, setSheetWidth] = useState(540);
     const [isResizing, setIsResizing] = useState(false);
-    const [selectedAbstract, setSelectedAbstract] = useState<{ title: string; content: string } | null>(null);
+    const [selectedAbstract, setSelectedAbstract] = useState<{ title: string; content: string; link?: string } | null>(null);
+
+    // Email Dialog State
+    const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+    const [emailStep, setEmailStep] = useState<'selection' | 'generating' | 'editing'>('selection');
+    const [generatedEmail, setGeneratedEmail] = useState("");
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+    const handleGenerateEmail = async (type: 'reach_out' | 'colab') => {
+        if (!selectedNode) return;
+        setEmailStep('generating');
+        try {
+            const response = await generateEmail(type, selectedNode.name);
+            setGeneratedEmail(response.content);
+            setEmailStep('editing');
+        } catch (error) {
+            console.error("Failed to generate email", error);
+            setEmailStep('selection'); // Go back on error
+        }
+    };
+
+    const handleSendEmail = async () => {
+        setIsSendingEmail(true);
+        try {
+            await sendEmail(generatedEmail);
+            setIsEmailDialogOpen(false);
+            // Reset state after closing
+            setTimeout(() => {
+                setEmailStep('selection');
+                setGeneratedEmail("");
+                setIsSendingEmail(false);
+            }, 300);
+        } catch (error) {
+            console.error("Failed to send email", error);
+            setIsSendingEmail(false);
+        }
+    };
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -372,7 +410,20 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                                 ))}
                                             </div>
                                         </div>
+
                                     )}
+
+                                    {/* Email Action */}
+                                    <div className="pt-4 border-t border-border/50">
+                                        <Button
+                                            variant="outline"
+                                            className="w-full gap-2 border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+                                            onClick={() => setIsEmailDialogOpen(true)}
+                                        >
+                                            <Mail className="w-4 h-4" />
+                                            Drop an email
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -425,6 +476,85 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                 View Paper <ExternalLink className="w-3 h-3" />
                             </a>
                         </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Email Generation Dialog */}
+            <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                <DialogContent className="sm:max-w-[500px] bg-background/95 backdrop-blur-xl border-primary/20">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-display text-primary">
+                            <Mail className="w-5 h-5" />
+                            {emailStep === 'selection' && "Draft an Email"}
+                            {emailStep === 'generating' && "Generating Draft"}
+                            {emailStep === 'editing' && "Edit & Send"}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="py-6">
+                        {emailStep === 'selection' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <Button
+                                    variant="outline"
+                                    className="h-24 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all"
+                                    onClick={() => handleGenerateEmail('reach_out')}
+                                >
+                                    <User className="w-6 h-6 text-primary" />
+                                    <span>Reach out</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="h-24 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all"
+                                    onClick={() => handleGenerateEmail('colab')}
+                                >
+                                    <Network className="w-6 h-6 text-primary" />
+                                    <span>Ask for collaboration</span>
+                                </Button>
+                            </div>
+                        )}
+
+                        {emailStep === 'generating' && (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                                <p className="text-sm text-muted-foreground animate-pulse">
+                                    Your email is being generated...
+                                </p>
+                            </div>
+                        )}
+
+                        {emailStep === 'editing' && (
+                            <div className="space-y-4">
+                                <Textarea
+                                    value={generatedEmail}
+                                    onChange={(e) => setGeneratedEmail(e.target.value)}
+                                    className="min-h-[200px] bg-background/50 border-primary/20 focus:border-primary resize-none font-mono text-sm"
+                                    placeholder="Email content..."
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {emailStep === 'editing' && (
+                        <DialogFooter>
+                            <Button
+                                onClick={handleSendEmail}
+                                disabled={isSendingEmail}
+                                className="gap-2"
+                            >
+                                {isSendingEmail ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="w-4 h-4" />
+                                        Send Email
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
                     )}
                 </DialogContent>
             </Dialog>

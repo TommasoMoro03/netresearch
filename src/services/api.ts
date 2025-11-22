@@ -327,3 +327,24 @@ export const getMockStatus = (runId: string): Promise<AgentStatusResponse> => {
         }, 500);
     });
 };
+
+export const generateEmail = async (type: 'reach_out' | 'colab', nodeName: string): Promise<{ content: string }> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const content = type === 'reach_out'
+                ? `Dear ${nodeName},\n\nI recently came across your work on [Topic] and found it incredibly inspiring. I would love to connect and learn more about your current research directions.\n\nBest regards,\n[Your Name]`
+                : `Dear ${nodeName},\n\nI am writing to propose a potential collaboration regarding [Topic]. Given your expertise in this field, I believe our combined efforts could lead to significant breakthroughs.\n\nBest regards,\n[Your Name]`;
+
+            resolve({ content });
+        }, 2000);
+    });
+};
+
+export const sendEmail = async (content: string): Promise<{ success: boolean }> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            console.log("Sending email:", content);
+            resolve({ success: true });
+        }, 1000);
+    });
+};
