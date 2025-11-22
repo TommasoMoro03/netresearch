@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 
 
 class AgentRunRequest(BaseModel):
@@ -12,11 +12,18 @@ class AgentRunResponse(BaseModel):
     run_id: str
     status: str
 
+class Source(BaseModel):
+    title: str
+    url: str
+    type: Literal["paper", "author", "institution", "concept"]
 
 class StepLog(BaseModel):
-    step: str
+    step_id: str
+    step_type: Literal["intent", "filters", "search", "extraction", "relationships", "graph"]
     message: str
-    sources: List[str] = []
+    details: Optional[Dict[str, Any]] = None  # e.g. {"filters": ["Europe", "Robotics"]}
+    sources: List[Source] = []
+    status: Literal["in_progress", "done", "pending"]
     timestamp: str
 
 

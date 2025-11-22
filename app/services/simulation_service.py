@@ -1,33 +1,40 @@
-import time
 import random
-from app.services.state_manager import state_manager
+from typing import Optional, List
+from app.agents.orchestrator import ResearchAgentOrchestrator
+from app.agents.models import AgentContext
 
 
-def simulate_agent_run(run_id: str, query: str, max_nodes: int):
+def run_research_agent(
+    run_id: str,
+    query: str,
+    max_nodes: int,
+    cv_id: Optional[str] = None,
+    cv_concepts: Optional[List[str]] = None
+):
     """
-    Background task that simulates agent thinking process.
-    Adds mock logs step-by-step over ~10 seconds.
+    Execute the research agent pipeline.
+
+    This replaces the old mock simulation with the real agent orchestrator.
+
+    Args:
+        run_id: Unique run identifier
+        query: User's research query
+        max_nodes: Maximum number of nodes in graph
+        cv_id: Optional CV identifier
+        cv_concepts: Optional list of concepts extracted from CV
     """
-    steps = [
-        ("Intent Recognition", f"Identified topic: {query}"),
-        ("Query Expansion", "Expanding search terms based on semantic similarity"),
-        ("OpenAlex Search", f"Searching for papers related to '{query}'"),
-        ("Citation Analysis", "Analyzing citation networks"),
-        ("Graph Construction", f"Building graph with {max_nodes} nodes"),
-        ("Relevance Scoring", "Ranking papers by relevance"),
-        ("Finalization", "Graph construction complete")
-    ]
+    # Create agent context
+    context = AgentContext(
+        run_id=run_id,
+        query=query,
+        cv_id=cv_id,
+        cv_concepts=cv_concepts,
+        max_nodes=max_nodes
+    )
 
-    for step_name, step_message in steps:
-        time.sleep(1.5)  # Simulate processing time
-        state_manager.add_run_step(run_id, step_name, step_message)
-
-    # Generate mock graph data
-    graph_data = generate_mock_graph(max_nodes)
-    state_manager.set_run_graph(run_id, graph_data)
-
-    # Mark as completed
-    state_manager.update_run_status(run_id, "completed")
+    # Create orchestrator and run
+    orchestrator = ResearchAgentOrchestrator()
+    orchestrator.run(context)
 
 
 def generate_mock_graph(max_nodes: int):

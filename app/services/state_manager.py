@@ -45,13 +45,36 @@ class StateManager:
         if run_id in self.run_store:
             self.run_store[run_id]["status"] = status
 
-    def add_run_step(self, run_id: str, step: str, message: str, sources: list = None) -> None:
-        """Add a step log to a run."""
+    def add_run_step(
+        self,
+        run_id: str,
+        step_id: str,
+        step_type: str,
+        message: str,
+        details: Optional[Dict[str, Any]] = None,
+        sources: list = None,
+        status: str = "done"
+    ) -> None:
+        """
+        Add a step log to a run.
+
+        Args:
+            run_id: Run identifier
+            step_id: Unique step identifier
+            step_type: Type of step (intent, filters, search, extraction, relationships, graph)
+            message: Human-readable message
+            details: Optional details dict (e.g., {"filters": ["Europe", "Robotics"]})
+            sources: List of source objects with title, url, type
+            status: Step status (in_progress, done, pending)
+        """
         if run_id in self.run_store:
             step_log = {
-                "step": step,
+                "step_id": step_id,
+                "step_type": step_type,
                 "message": message,
+                "details": details,
                 "sources": sources or [],
+                "status": status,
                 "timestamp": datetime.utcnow().isoformat()
             }
             self.run_store[run_id]["steps"].append(step_log)

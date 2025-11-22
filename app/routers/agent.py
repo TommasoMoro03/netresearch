@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
 from app.services.state_manager import state_manager
-from app.services.simulation_service import simulate_agent_run
+from app.services.simulation_service import run_research_agent
 import uuid
 
 router = APIRouter(prefix="/api/agent", tags=["Agent"])
@@ -16,6 +16,13 @@ async def start_agent_run(request: AgentRunRequest, background_tasks: Background
     # Generate unique run ID
     run_id = str(uuid.uuid4())
 
+    # Get CV concepts if CV ID is provided
+    cv_concepts = None
+    if request.cv_id:
+        cv_data = state_manager.get_cv(request.cv_id)
+        if cv_data:
+            cv_concepts = cv_data.get("concepts", [])
+
     # Create run in state manager
     state_manager.create_run(
         run_id=run_id,
@@ -24,12 +31,14 @@ async def start_agent_run(request: AgentRunRequest, background_tasks: Background
         max_nodes=request.max_nodes
     )
 
-    # Start background simulation
+    # Start background agent execution
     background_tasks.add_task(
-        simulate_agent_run,
+        run_research_agent,
         run_id=run_id,
         query=request.query,
-        max_nodes=request.max_nodes
+        max_nodes=request.max_nodes,
+        cv_id=request.cv_id,
+        cv_concepts=cv_concepts
     )
 
     return AgentRunResponse(run_id=run_id, status="started")
