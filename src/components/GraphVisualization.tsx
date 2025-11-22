@@ -35,7 +35,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     // Chat State
     const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'bot'; content: string }[]>([]);
     const [chatInput, setChatInput] = useState("");
-    const [chatHeight, setChatHeight] = useState(300); // Default height
+    const [chatHeight, setChatHeight] = useState(80); // Default height collapsed
     const [isChatResizing, setIsChatResizing] = useState(false);
     const [isChatLoading, setIsChatLoading] = useState(false);
     const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -46,22 +46,29 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
         }
     }, [chatMessages, chatHeight]);
 
+    const hasChatResized = useRef(false);
+
     const startChatResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
         setIsChatResizing(true);
+        hasChatResized.current = false;
     }, []);
 
     const stopChatResizing = useCallback(() => {
         setIsChatResizing(false);
+        if (!hasChatResized.current) {
+            setChatHeight(prev => prev > 150 ? 80 : 400);
+        }
     }, []);
 
     const resizeChat = useCallback(
         (mouseMoveEvent: MouseEvent) => {
             if (isChatResizing) {
                 const newHeight = window.innerHeight - mouseMoveEvent.clientY;
-                // Constraints: Min 100px, Max 80% of screen
-                if (newHeight > 100 && newHeight < window.innerHeight * 0.8) {
+                // Constraints: Min 80px, Max 80% of screen
+                if (newHeight > 80 && newHeight < window.innerHeight * 0.8) {
                     setChatHeight(newHeight);
+                    hasChatResized.current = true;
                 }
             }
         },
@@ -86,6 +93,11 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
         setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
         setChatInput("");
         setIsChatLoading(true);
+
+        // Auto-expand on first message
+        if (chatMessages.length === 0) {
+            setChatHeight(400);
+        }
 
         try {
             const response = await sendMessage(userMsg, selectedNode.name);
