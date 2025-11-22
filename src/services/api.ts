@@ -86,7 +86,20 @@ export const mockGraphData: GraphData = {
             cited_by_count: 1337,
             h_index: 25,
             papers: [
-                { title: "Neural Networks for Time Travel", publication_year: 2029, link: "https://arxiv.org/abs/time-travel" }
+                {
+                    title: "Neural Networks for Time Travel",
+                    publication_year: 2029,
+                    link: "https://arxiv.org/abs/time-travel",
+                    topic: "Temporal Mechanics",
+                    abstract: "This paper explores the theoretical possibility of using advanced neural networks to calculate temporal displacement vectors. We propose a novel architecture capable of predicting and compensating for the chaotic nature of time travel, ensuring safe arrival at the target destination."
+                },
+                {
+                    title: "twinsnvfs",
+                    publication_year: 2029,
+                    link: "https://arxiv.org/abs/time-travel",
+                    topic: "Quantum Computing",
+                    abstract: "A study on the effects of quantum entanglement on twin paradox scenarios in non-volatile file systems."
+                }
             ],
             color: "#14b8a6",
             level: 1

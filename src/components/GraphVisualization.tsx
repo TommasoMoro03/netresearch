@@ -21,6 +21,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
     const [sheetWidth, setSheetWidth] = useState(540);
     const [isResizing, setIsResizing] = useState(false);
+    const [selectedAbstract, setSelectedAbstract] = useState<{ title: string; content: string } | null>(null);
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
         mouseDownEvent.preventDefault();
@@ -220,10 +221,6 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                     sprite.strokeColor = '#000000';
                     sprite.strokeWidth = 1;
 
-                    // sprite.backgroundColor = '#00000080'; // Removed background shadow
-                    sprite.padding = 1;
-                    // sprite.borderRadius = 10; // No longer needed without background
-
                     // Ensure text is always visible on top
                     sprite.renderOrder = 999;
                     sprite.material.depthTest = false;
@@ -338,31 +335,39 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                                                 {selectedNode.papers.map((paper, idx) => (
                                                     <div key={idx} className="p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
                                                         <div className="flex justify-between items-start gap-2">
-                                                            <h5 className="text-sm font-medium text-foreground leading-snug">{paper.title}</h5>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <h5 className="text-sm font-medium text-foreground leading-snug">{paper.title}</h5>
+                                                                {paper.topic && (
+                                                                    <span className="text-xs text-muted-foreground font-medium">{paper.topic}</span>
+                                                                )}
+                                                            </div>
                                                             {paper.publication_year && (
                                                                 <span className="text-xs text-muted-foreground whitespace-nowrap px-1.5 py-0.5 rounded bg-background border border-border/50">
                                                                     {paper.publication_year}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        {paper.topic && (
-                                                            <p className="text-xs text-primary mt-1">{paper.topic}</p>
-                                                        )}
-                                                        {paper.abstract && (
-                                                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                                                {paper.abstract}
-                                                            </p>
-                                                        )}
-                                                        {paper.link && (
-                                                            <a
-                                                                href={paper.link}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
-                                                            >
-                                                                View Paper <ExternalLink className="w-3 h-3" />
-                                                            </a>
-                                                        )}
+
+                                                        <div className="flex items-center gap-4 mt-3">
+                                                            {paper.link && (
+                                                                <a
+                                                                    href={paper.link}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                                                >
+                                                                    View Paper <ExternalLink className="w-3 h-3" />
+                                                                </a>
+                                                            )}
+                                                            {paper.abstract && (
+                                                                <button
+                                                                    onClick={() => setSelectedAbstract({ title: paper.title, content: paper.abstract!, link: paper.link })}
+                                                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+                                                                >
+                                                                    Read Abstract <FileText className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -388,6 +393,37 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
                             <p className="text-lg font-medium text-foreground leading-relaxed">
                                 {selectedLink.label || 'Unknown relationship'}
                             </p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!selectedAbstract} onOpenChange={(open) => !open && setSelectedAbstract(null)}>
+                <DialogContent className="sm:max-w-[600px] bg-background/95 backdrop-blur-xl border-primary/20">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-display text-primary">
+                            <FileText className="w-5 h-5" />
+                            Abstract
+                        </DialogTitle>
+                        <DialogDescription>
+                            {selectedAbstract?.title}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="h-[300px] w-full rounded-md border p-4 mt-2">
+                        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                            {selectedAbstract?.content}
+                        </p>
+                    </ScrollArea>
+                    {selectedAbstract?.link && (
+                        <div className="flex justify-end mt-4 pt-2 border-t border-border/50">
+                            <a
+                                href={selectedAbstract.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                                View Paper <ExternalLink className="w-3 h-3" />
+                            </a>
                         </div>
                     )}
                 </DialogContent>
