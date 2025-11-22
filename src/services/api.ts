@@ -13,6 +13,12 @@ export interface Paper {
     topic?: string;
 }
 
+export interface BasicProfessor {
+    name: string;
+    institution: string | null;
+    description?: string;
+}
+
 export interface GraphNode {
     id: string;
     name: string;
@@ -44,12 +50,17 @@ export interface GraphData {
 
 export interface StepLog {
     step_id: string;
-    step_type: "intent" | "filters" | "extraction" | "exploration" | "connections" | "graph";
+    step_type: "intent" | "filters" | "search" | "extraction" | "relationships" | "graph";
     message: string;
     status: "in_progress" | "done" | "pending";
     timestamp: string;
-    details?: Record<string, string>;
-    sources?: Array<{
+
+    // Step-specific fields
+    details?: Record<string, string>; // Deprecated, kept for backward compatibility if needed
+    filters?: Record<string, string[]>; // For "filters" step
+    papers?: Paper[]; // For "search" step
+    professors?: BasicProfessor[]; // For "extraction" step
+    sources?: Array<{ // Kept for backward compatibility or generic sources
         title: string;
         url: string;
         type: "paper" | "author" | "institution";
@@ -69,7 +80,7 @@ export const mockGraphData: GraphData = {
         {
             id: "user",
             name: "user",
-            type: "person", // Keeping as person for user node, or maybe "user"? Let's stick to "person" for now or "user" if distinct. The user said "professor" or "laboratory". Let's use "professor" for people-like things or maybe a special type. The prompt said "The node type is only person or lab" previously, now "professor", "laboratory". I'll use "professor" for people and "laboratory" for labs. For the user node, I'll keep it as "user" or "professor" but with level 0. Let's use "professor" for consistency or maybe just "user" and handle it. Actually, the user node is special. I'll keep type "person" for user to distinguish, or map it to "professor". Let's use "professor" for user to be safe with types, but maybe "user" is better. I'll use "professor" for now but name it "user".
+            type: "person",
             description: "The central user node.",
             contacts: {},
             color: "#e0f2f1",
@@ -116,7 +127,7 @@ export const mockGraphData: GraphData = {
         {
             id: "n3",
             name: "Skynet Architecture",
-            type: "laboratory", // Representing paper/project as lab for now or maybe just a node. The user said "professor" or "laboratory". I'll stick to that.
+            type: "laboratory",
             description: "Seminal paper on distributed autonomous defense networks.",
             contacts: {},
             color: "#06b6d4",
@@ -214,7 +225,7 @@ const baseSteps: StepLog[] = [
         step_id: "1",
         step_type: "intent",
         message: "Analyzing user intent...",
-        status: "done",
+        status: "pending",
         timestamp: new Date().toISOString(),
         details: { "Confidence": "0.98", "Intent": "Research Discovery" }
     },
@@ -222,31 +233,48 @@ const baseSteps: StepLog[] = [
         step_id: "2",
         step_type: "filters",
         message: "Applying search filters...",
-        status: "done",
+        status: "pending",
         timestamp: new Date().toISOString(),
-        details: { "Topic": "AI", "Region": "Global" }
+        filters: {
+            "Topics": ["Artificial Intelligence", "Neural Networks", "Robotics"],
+            "Year Range": ["2020", "2030"],
+            "Region": ["Global"]
+        }
     },
     {
         step_id: "3",
-        step_type: "extraction",
-        message: "Extracting entities from sources...",
-        status: "in_progress",
+        step_type: "search",
+        message: "Searching for relevant papers...",
+        status: "pending",
         timestamp: new Date().toISOString(),
-        sources: [
-            { title: "Attention Is All You Need", url: "https://arxiv.org/abs/1706.03762", type: "paper" },
-            { title: "Yann LeCun", url: "https://scholar.google.com", type: "author" }
+        papers: [
+            { title: "Neural Networks for Time Travel", publication_year: 2029, link: "https://arxiv.org/abs/time-travel", topic: "Temporal Mechanics" },
+            { title: "Skynet Architecture: A Distributed Approach", publication_year: 2024, link: "https://arxiv.org/abs/skynet", topic: "Distributed Systems" },
+            { title: "Ethical Implications of Autonomous Defense", publication_year: 2025, link: "https://arxiv.org/abs/ethics-ai", topic: "AI Ethics" }
         ]
     },
     {
         step_id: "4",
-        step_type: "connections",
-        message: "Building citation network...",
+        step_type: "extraction",
+        message: "Extracting key researchers...",
         status: "pending",
         timestamp: new Date().toISOString(),
-        details: { "Nodes": "15", "Edges": "42" }
+        professors: [
+            { name: "Prof. Sarah Connor", institution: "Cyberdyne Systems", description: "Expert in temporal mechanics and neural networks." },
+            { name: "Dr. Miles Dyson", institution: "Cyberdyne Systems", description: "Director of Special Projects." },
+            { name: "Major Motoko", institution: "Section 9", description: "Specialist in cyber-warfare." }
+        ]
     },
     {
         step_id: "5",
+        step_type: "relationships",
+        message: "Analyzing collaboration networks...",
+        status: "pending",
+        timestamp: new Date().toISOString(),
+        details: { "Nodes Identified": "12", "Connections Found": "24" }
+    },
+    {
+        step_id: "6",
         step_type: "graph",
         message: "Finalizing graph visualization...",
         status: "pending",
@@ -266,31 +294,46 @@ export const getAgentStatus = async (runId: string): Promise<AgentStatusResponse
     const elapsed = Date.now() - mockRuns[runId].startTime;
 
     // Simulate progression based on time
-    // 0-2s: Steps 1 & 2 done, 3 in progress
-    // 2-4s: Step 3 done, 4 in progress
-    // 4-6s: Step 4 done, 5 in progress
-    // >6s: All done, completed
-
     let currentSteps = [...baseSteps];
     let status: "running" | "completed" | "failed" = "running";
     let progress = 0;
 
     if (elapsed < 2000) {
-        // Initial state
-        progress = 30;
-    } else if (elapsed < 4000) {
-        // Advance to step 4
+        // Step 1 in progress
         currentSteps = currentSteps.map(s => {
-            if (s.step_id === "3") return { ...s, status: "done" };
+            if (s.step_id === "1") return { ...s, status: "in_progress" };
+            return s;
+        });
+        progress = 10;
+    } else if (elapsed < 3000) {
+        // Step 1 done, Step 2 done (fast), Step 3 in progress
+        currentSteps = currentSteps.map(s => {
+            if (s.step_id === "1" || s.step_id === "2") return { ...s, status: "done" };
+            if (s.step_id === "3") return { ...s, status: "in_progress" };
+            return s;
+        });
+        progress = 30;
+    } else if (elapsed < 5000) {
+        // Step 3 done, Step 4 in progress
+        currentSteps = currentSteps.map(s => {
+            if (s.step_id === "1" || s.step_id === "2" || s.step_id === "3") return { ...s, status: "done" };
             if (s.step_id === "4") return { ...s, status: "in_progress" };
             return s;
         });
-        progress = 60;
-    } else if (elapsed < 6000) {
-        // Advance to step 5
+        progress = 50;
+    } else if (elapsed < 7000) {
+        // Step 4 done, Step 5 in progress
         currentSteps = currentSteps.map(s => {
-            if (s.step_id === "3" || s.step_id === "4") return { ...s, status: "done" };
+            if (s.step_id === "1" || s.step_id === "2" || s.step_id === "3" || s.step_id === "4") return { ...s, status: "done" };
             if (s.step_id === "5") return { ...s, status: "in_progress" };
+            return s;
+        });
+        progress = 70;
+    } else if (elapsed < 9000) {
+        // Step 5 done, Step 6 in progress
+        currentSteps = currentSteps.map(s => {
+            if (s.step_id === "1" || s.step_id === "2" || s.step_id === "3" || s.step_id === "4" || s.step_id === "5") return { ...s, status: "done" };
+            if (s.step_id === "6") return { ...s, status: "in_progress" };
             return s;
         });
         progress = 90;

@@ -134,10 +134,10 @@ export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) =
                                     )}
                                 </div>
 
-                                {/* Details & Sources (Collapsible) */}
+                                {/* Details & Content (Collapsible) */}
                                 {isExpanded && (
                                     <div className="mt-3 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                                        {/* Details Badges */}
+                                        {/* Details Badges (Legacy) */}
                                         {step.details && Object.keys(step.details).length > 0 && (
                                             <div className="flex flex-wrap gap-2">
                                                 {Object.entries(step.details).map(([key, value]) => (
@@ -149,7 +149,89 @@ export const ReasoningConsole = ({ runId, onComplete }: ReasoningConsoleProps) =
                                             </div>
                                         )}
 
-                                        {/* Sources Grid */}
+                                        {/* Filters */}
+                                        {step.filters && Object.keys(step.filters).length > 0 && (
+                                            <div className="grid gap-2">
+                                                {Object.entries(step.filters).map(([key, values]) => (
+                                                    <div key={key} className="text-sm">
+                                                        <span className="text-muted-foreground mr-2">{key}:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {values.map((val, idx) => (
+                                                                <Badge key={idx} variant="outline" className="text-xs">
+                                                                    {val}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Papers (Search Step) */}
+                                        {step.papers && step.papers.length > 0 && (
+                                            <div className="space-y-2">
+                                                {step.papers.map((paper, idx) => (
+                                                    <Card key={idx} className="p-3 hover:bg-muted/50 transition-colors border-border/50 group">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div>
+                                                                <h4 className="text-sm font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
+                                                                    {paper.title}
+                                                                </h4>
+                                                                {paper.topic && (
+                                                                    <p className="text-xs text-muted-foreground mt-0.5">{paper.topic}</p>
+                                                                )}
+                                                            </div>
+                                                            {paper.publication_year && (
+                                                                <Badge variant="secondary" className="text-[10px] h-5">
+                                                                    {paper.publication_year}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        {paper.link && (
+                                                            <a
+                                                                href={paper.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                                                            >
+                                                                View Source <ExternalLink className="w-3 h-3" />
+                                                            </a>
+                                                        )}
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Professors (Extraction Step) */}
+                                        {step.professors && step.professors.length > 0 && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {step.professors.map((prof, idx) => (
+                                                    <Card key={idx} className="p-3 hover:bg-muted/50 transition-colors border-border/50">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="mt-0.5 p-1.5 rounded-md bg-primary/10 text-primary">
+                                                                <User className="w-4 h-4" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium">{prof.name}</p>
+                                                                {prof.institution && (
+                                                                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                                                        <Building2 className="w-3 h-3" />
+                                                                        {prof.institution}
+                                                                    </p>
+                                                                )}
+                                                                {prof.description && (
+                                                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                                        {prof.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Legacy Sources Grid */}
                                         {step.sources && step.sources.length > 0 && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {step.sources.map((source, idx) => (
