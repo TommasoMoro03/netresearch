@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import cv, agent
+from app.routers import cv, agent, email
 
 app = FastAPI(
     title="DeepScience Agent API",
@@ -20,6 +20,7 @@ app.add_middleware(
 # Include routers
 app.include_router(cv.router)
 app.include_router(agent.router)
+app.include_router(email.router)
 
 
 @app.get("/")
