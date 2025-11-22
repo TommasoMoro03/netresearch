@@ -19,6 +19,38 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
     const [selectedLink, setSelectedLink] = useState<GraphLink | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+    const [sheetWidth, setSheetWidth] = useState(540);
+    const [isResizing, setIsResizing] = useState(false);
+
+    const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
+        mouseDownEvent.preventDefault();
+        setIsResizing(true);
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    const resize = useCallback(
+        (mouseMoveEvent: MouseEvent) => {
+            if (isResizing) {
+                const newWidth = window.innerWidth - mouseMoveEvent.clientX;
+                if (newWidth > 300 && newWidth < window.innerWidth * 0.9) {
+                    setSheetWidth(newWidth);
+                }
+            }
+        },
+        [isResizing]
+    );
+
+    useEffect(() => {
+        window.addEventListener("mousemove", resize);
+        window.addEventListener("mouseup", stopResizing);
+        return () => {
+            window.removeEventListener("mousemove", resize);
+            window.removeEventListener("mouseup", stopResizing);
+        };
+    }, [resize, stopResizing]);
 
     // Auto-rotate and Zoom sensitivity
     useEffect(() => {
@@ -210,8 +242,15 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data }) => {
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetContent
                     side="right"
-                    className="w-[400px] sm:w-[540px] bg-background/95 backdrop-blur-xl border-l border-primary/20 overflow-visible"
+                    style={{ width: `${sheetWidth}px`, maxWidth: '90vw' }}
+                    className={`bg-background/95 backdrop-blur-xl border-l border-primary/20 overflow-visible sm:max-w-none ${isResizing ? 'transition-none duration-0' : 'transition-all duration-300 ease-in-out'}`}
                 >
+                    {/* Drag Handle */}
+                    <div
+                        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-primary/50 active:bg-primary transition-colors z-50 -ml-0.5"
+                        onMouseDown={startResizing}
+                    />
+
                     <div className="h-full overflow-y-auto pr-2">
                         <SheetHeader>
                             <SheetTitle className="flex items-center gap-2 text-xl font-display text-primary">
