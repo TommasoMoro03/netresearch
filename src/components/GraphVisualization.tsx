@@ -133,6 +133,11 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName,
             setEmailStep('editing');
         } catch (error) {
             console.error("Failed to generate email", error);
+            toast({
+                title: "Email Generation Failed",
+                description: error instanceof Error ? error.message : "Unable to generate email. Please try again.",
+                variant: "destructive",
+            });
             setEmailStep('selection'); // Go back on error
         }
     };
