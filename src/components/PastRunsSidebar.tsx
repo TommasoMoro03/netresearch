@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { History, ChevronRight } from "lucide-react";
+import { History, ChevronRight, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getAllRuns } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { getAllRuns, resetDatabase } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface PastRun {
   id: string;
@@ -16,21 +18,48 @@ interface PastRunsSidebarProps {
 export const PastRunsSidebar = ({ onRunClick }: PastRunsSidebarProps) => {
   const [pastRuns, setPastRuns] = useState<PastRun[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isResetting, setIsResetting] = useState(false);
+  const { toast } = useToast();
+
+  const fetchPastRuns = async () => {
+    try {
+      const runs = await getAllRuns();
+      setPastRuns(runs);
+    } catch (error) {
+      console.error("Failed to fetch past runs:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPastRuns = async () => {
-      try {
-        const runs = await getAllRuns();
-        setPastRuns(runs);
-      } catch (error) {
-        console.error("Failed to fetch past runs:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchPastRuns();
   }, []);
+
+  const handleReset = async () => {
+    if (!confirm("Are you sure you want to delete all data? This will remove your user info and all past searches.")) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetDatabase();
+      setPastRuns([]);
+      toast({
+        title: "Database Reset",
+        description: "All data has been deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to reset database:", error);
+      toast({
+        title: "Reset Failed",
+        description: "Failed to reset database. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <div className="fixed left-0 top-0 h-screen w-80 glass-panel border-r border-border/50 flex flex-col">
@@ -83,6 +112,20 @@ export const PastRunsSidebar = ({ onRunClick }: PastRunsSidebarProps) => {
           </div>
         )}
       </ScrollArea>
+
+      {/* Reset Button */}
+      <div className="p-4 border-t border-border/50">
+        <Button
+          onClick={handleReset}
+          disabled={isResetting}
+          variant="outline"
+          size="sm"
+          className="w-full border-red-500/50 text-red-500 hover:bg-red-500/10 hover:border-red-500"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          {isResetting ? "Resetting..." : "Reset Database"}
+        </Button>
+      </div>
     </div>
   );
 };

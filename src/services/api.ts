@@ -315,3 +315,16 @@ export const getRunById = async (runId: string): Promise<{ id: string; query: st
         graph_data: graphData
     };
 };
+
+// Reset all database data
+export const resetDatabase = async (): Promise<{ message: string; status: string }> => {
+    const response = await fetch(`${API_BASE_URL}/reset`, {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to reset database: ${response.statusText}`);
+    }
+
+    return await response.json();
+};
