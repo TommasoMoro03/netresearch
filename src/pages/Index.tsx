@@ -120,13 +120,41 @@ const Index = () => {
               {/* Context Panel - Name and CV Upload - Only show before starting search */}
               {!searchStarted && (
                 <div className="flex items-center gap-3">
-                  <Input
-                    type="text"
-                    placeholder="Your Full Name"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="glass-panel rounded-xl px-4 py-3 min-w-[200px] bg-input/50 border-border/50 focus:border-primary"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Your Full Name"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter" && userName.trim()) {
+                          await sendUserName(userName);
+                          toast({
+                            title: "Name Saved",
+                            description: "Your name has been saved successfully.",
+                          });
+                        }
+                      }}
+                      className="glass-panel rounded-xl px-4 py-3 min-w-[200px] bg-input/50 border-border/50 focus:border-primary"
+                    />
+                    <Button
+                      onClick={async () => {
+                        if (userName.trim()) {
+                          await sendUserName(userName);
+                          toast({
+                            title: "Name Saved",
+                            description: "Your name has been saved successfully.",
+                          });
+                        }
+                      }}
+                      disabled={!userName.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="border-border/50 hover:border-primary"
+                    >
+                      Save
+                    </Button>
+                  </div>
                   <label className="glass-panel rounded-xl px-4 py-3 flex items-center gap-3 min-w-[280px] cursor-pointer hover:border-primary/50 transition-all">
                     <Upload className="w-5 h-5 text-primary" />
                     <input
