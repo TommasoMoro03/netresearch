@@ -1,6 +1,10 @@
 // Type definitions for the Agent Reasoning Console
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
+// Handle both local and production API URLs
+// Local: VITE_API_URL = "/api" (already includes /api)
+// Production: VITE_API_URL = "https://netresearch-backend.onrender.com" (needs /api)
+const baseUrl = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
 
 export interface Contact {
     email?: string;
