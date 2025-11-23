@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Upload, Search, Zap, Brain, Network, FileText } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Upload, Search, Zap, Brain, Network, FileText, Mic, Square, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import GraphVisualization from "@/components/GraphVisualization";
-import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData, getRunById } from "@/services/api";
+import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData, getRunById, transcribeAudio } from "@/services/api";
 import { ReasoningConsole } from "@/components/ReasoningConsole";
 import { PastRunsSidebar } from "@/components/PastRunsSidebar";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,10 @@ const Index = () => {
   const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [userName, setUserName] = useState("");
   const [hasCvLoaded, setHasCvLoaded] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
   // Load user data on component mount
@@ -46,7 +50,65 @@ const Index = () => {
     };
 
     loadUserData();
+    loadUserData();
   }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setIsTranscribing(true);
+        try {
+          const result = await transcribeAudio(audioBlob);
+          setQuery(result.text);
+          toast({
+            title: "Audio Transcribed",
+            description: "Your speech has been converted to text.",
+          });
+        } catch (error) {
+          console.error("Transcription failed:", error);
+          toast({
+            title: "Transcription Failed",
+            description: "Could not transcribe audio. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsTranscribing(false);
+        }
+
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast({
+        title: "Microphone Error",
+        description: "Could not access microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -247,8 +309,31 @@ const Index = () => {
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleStartDiscovery()}
                       placeholder="Share your research interests (e.g., 'Who works on Diffusion Models in Europe?')"
-                      className="pl-12 pr-4 py-6 text-lg bg-input/50 border-border/50 focus:border-primary transition-all"
+                      className="pl-12 pr-12 py-6 text-lg bg-input/50 border-border/50 focus:border-primary transition-all"
                     />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      {isTranscribing ? (
+                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      ) : isRecording ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={stopRecording}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-100/10 animate-pulse"
+                        >
+                          <Square className="w-4 h-4 fill-current" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={startRecording}
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-4">

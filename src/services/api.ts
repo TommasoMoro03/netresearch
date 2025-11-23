@@ -355,3 +355,20 @@ export const resetDatabase = async (): Promise<{ message: string; status: string
 
     return await response.json();
 };
+
+// Transcribe audio file
+export const transcribeAudio = async (audioBlob: Blob): Promise<{ text: string }> => {
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+
+    const response = await fetch(`${API_BASE_URL}/audio/transcribe`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to transcribe audio: ${response.statusText}`);
+    }
+
+    return await response.json();
+};
