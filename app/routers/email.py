@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.services.email_service import email_service
 from app.services.state_manager import state_manager
+from app.database.database import db
 
 router = APIRouter(prefix="/api/email", tags=["Email"])
 
@@ -37,17 +38,34 @@ async def generate_email(request: EmailGenerateRequest):
     Generate an email based on type and context using LLM.
     """
     try:
-        # Fetch CV data
+        # Fetch CV data - make it optional
+        cv_text = ""
+        cv_concepts = []
+        
+        # First try state_manager (in-memory)
         cv_data = state_manager.get_cv(request.cv_id)
+        
+        # If not found, try DB (persistence)
         if not cv_data:
-            raise HTTPException(status_code=404, detail="CV not found")
-            
-        # Extract CV info
-        cv_text = cv_data.get("text_preview", "")
-        cv_concepts = cv_data.get("concepts", [])
+            user = db.get_user()
+            if user and user.get("cv_transcribed"):
+                # Reconstruct CV data structure from DB
+                cv_data = {
+                    "text_preview": user["cv_transcribed"],
+                    "concepts": []
+                }
+        
+        # Extract CV info if available
+        if cv_data:
+            cv_text = cv_data.get("text_preview", "")
+            cv_concepts = cv_data.get("concepts", [])
         
         # Get student name
         student_name = state_manager.get_user_name()
+        if not student_name:
+            user = db.get_user()
+            if user:
+                student_name = user["name"]
         
         # Generate email
         content = email_service.generate_email(

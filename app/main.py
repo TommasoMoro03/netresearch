@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import cv, agent, email, user
+from app.routers import cv, agent, email, user, chat
 
 app = FastAPI(
     title="NetResearch Agent API",
@@ -28,6 +28,7 @@ app.include_router(cv.router)
 app.include_router(agent.router)
 app.include_router(email.router)
 app.include_router(user.router)
+app.include_router(chat.router)
 
 
 @app.get("/")
