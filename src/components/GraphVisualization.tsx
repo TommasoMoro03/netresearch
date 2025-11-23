@@ -201,6 +201,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
                 controls.zoomSpeed = 3; // Adjusted zoom sensitivity
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.1;
+                controls.target.set(0, 0, 0); // Rotate around center (user node)
             }
 
             // Apply distance metric to link forces
@@ -212,21 +213,49 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
         }
     }, []);
 
+    // Handle window resize to keep user node centered
+    useEffect(() => {
+        const handleResize = () => {
+            if (fgRef.current) {
+                const controls = fgRef.current.controls();
+                if (controls) {
+                    controls.target.set(0, 0, 0);
+                }
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Center user node
     useEffect(() => {
         // Find user node and fix it to center
-        const userNode = data.nodes.find(n => n.name === 'user');
+        const userNode = data.nodes.find(n => n.id === 'user');
         if (userNode) {
             const node = userNode as any;
+            // Fix position
             node.fx = 0;
             node.fy = 0;
             node.fz = 0;
+            // Force current position
+            node.x = 0;
+            node.y = 0;
+            node.z = 0;
+
+            // Ensure rotation center is fixed to user node
+            if (fgRef.current) {
+                const controls = fgRef.current.controls();
+                if (controls) {
+                    controls.target.set(0, 0, 0);
+                }
+            }
         }
     }, [data]);
 
     const handleNodeDrag = (node: any) => {
         // Prevent dragging the user node
-        if (node.name === 'user') {
+        if (node.id === 'user') {
             node.fx = 0;
             node.fy = 0;
             node.fz = 0;
@@ -309,6 +338,20 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
                 onLinkClick={handleLinkClick}
                 backgroundColor="#00000000" // Transparent background to let the parent gradient show
                 showNavInfo={false}
+                onEngineStop={() => {
+                    if (fgRef.current) {
+                        const controls = fgRef.current.controls();
+                        if (controls) {
+                            controls.target.set(0, 0, 0);
+                        }
+                        // Ensure camera looks at center
+                        fgRef.current.cameraPosition(
+                            { x: 0, y: 0, z: 200 }, // Initial position
+                            { x: 0, y: 0, z: 0 },   // Look at center
+                            1000
+                        );
+                    }
+                }}
                 nodeThreeObjectExtend={false}
                 nodeThreeObject={(node: any) => {
                     const group = new THREE.Group();
