@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from app.services.email_service import email_service
 from app.services.state_manager import state_manager
@@ -13,12 +13,17 @@ class EmailType(str, Enum):
     COLAB = "colab"
     REACH_OUT = "reach_out"
 
+from pydantic import BaseModel, Field
+
 class EmailGenerateRequest(BaseModel):
-    email_type: EmailType
-    cv_id: str
-    professor_name: str
-    professor_context: str
+    email_type: EmailType = Field(default=EmailType.COLAB, alias="email_type")
+    professor_name: str = Field(default="", alias="professor_name")
+    cv_id: Optional[str] = None
+    professor_context: Optional[str] = ""
     recipient_name: Optional[str] = None
+
+    class Config:
+        allow_population_by_field_name = True
 
 class EmailGenerateResponse(BaseModel):
     content: str
@@ -42,8 +47,10 @@ async def generate_email(request: EmailGenerateRequest):
         cv_text = ""
         cv_concepts = []
         
-        # First try state_manager (in-memory)
-        cv_data = state_manager.get_cv(request.cv_id)
+        # First try state_manager (in-memory) if cv_id provided
+        cv_data = None
+        if request.cv_id:
+            cv_data = state_manager.get_cv(request.cv_id)
         
         # If not found, try DB (persistence)
         if not cv_data:
