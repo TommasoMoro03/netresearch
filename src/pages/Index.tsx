@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Search, Zap, Database, Brain, Network, FileText } from "lucide-react";
+import { Upload, Search, Zap, Brain, Network, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -168,7 +168,7 @@ const Index = () => {
 
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 flex-1">
-                      <Database className="w-4 h-4 text-muted-foreground" />
+
                       <span className="text-sm text-muted-foreground">Connections:</span>
                       <Select value={maxNodes} onValueChange={setMaxNodes}>
                         <SelectTrigger className="w-24 bg-input/50 border-border/50">
