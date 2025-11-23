@@ -73,19 +73,6 @@ class ResearchAgentOrchestrator:
         """
         run_id = context.run_id
 
-        # Add initial "intent" step (in_progress)
-        state_manager.add_run_step(
-            run_id=run_id,
-            step_id="intent-1",
-            step_type="intent",
-            message="Understanding user intentions...",
-            details=None,
-            sources=[],
-            status="in_progress"
-        )
-
-        time.sleep(1)  # Simulate thinking
-
         try:
             # Extract filters using the agent
             filters = self.intent_agent.extract_with_context(context)
@@ -93,12 +80,27 @@ class ResearchAgentOrchestrator:
             # Store filters in context
             context.filters = filters
 
-            # Update the step to "done" with extracted filters
+            # Add "filters" step with data immediately (in_progress)
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="filters-1",
                 step_type="filters",
-                message="Extracted research filters",
+                message="Understanding your research interests...",
+                filters={
+                    "topics": filters.topics,
+                    "geographical_areas": filters.geographical_areas
+                },
+                status="in_progress"
+            )
+
+            time.sleep(1)  # Brief pause for UX
+
+            # Mark as done (data already visible)
+            state_manager.add_run_step(
+                run_id=run_id,
+                step_id="filters-1",
+                step_type="filters",
+                message="Understanding your research interests...",
                 filters={
                     "topics": filters.topics,
                     "geographical_areas": filters.geographical_areas
@@ -107,7 +109,7 @@ class ResearchAgentOrchestrator:
             )
 
         except Exception as e:
-            # Mark intent as done with error
+            # Mark as done with error
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="filters-1",
@@ -123,17 +125,6 @@ class ResearchAgentOrchestrator:
         """
         run_id = context.run_id
 
-        # Add initial "search" step (in_progress)
-        state_manager.add_run_step(
-            run_id=run_id,
-            step_id="search-1",
-            step_type="search",
-            message="Looking for relevant papers associated to your research...",
-            status="in_progress"
-        )
-
-        time.sleep(1)  # Brief pause for UX
-
         try:
             # Search papers using the agent (fetches 2 * max_nodes)
             search_results = self.search_agent.search_papers(context)
@@ -148,18 +139,30 @@ class ResearchAgentOrchestrator:
             # Convert Paper objects to dict for JSON serialization
             preview_papers_dict = [paper.model_dump() for paper in preview_papers]
 
-            # Update the step to "done" with preview papers
+            # Add "search" step with papers immediately (in_progress)
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="search-1",
                 step_type="search",
-                message=f"Found {len(papers_data)} relevant papers",
-                papers=preview_papers_dict,  # Only first 4 papers for frontend
+                message="Looking for relevant papers...",
+                papers=preview_papers_dict,
+                status="in_progress"
+            )
+
+            time.sleep(1.5)  # Brief pause for UX
+
+            # Mark as done (all papers visible)
+            state_manager.add_run_step(
+                run_id=run_id,
+                step_id="search-1",
+                step_type="search",
+                message="Looking for relevant papers...",
+                papers=preview_papers_dict,
                 status="done"
             )
 
         except Exception as e:
-            # Mark search as done with error
+            # Mark as done with error
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="search-1",
@@ -175,19 +178,18 @@ class ResearchAgentOrchestrator:
         """
         run_id = context.run_id
 
-        # Add initial "extraction" step (in_progress)
+        # Add "extraction" step immediately to show in UI (in_progress, no professors yet)
         state_manager.add_run_step(
             run_id=run_id,
             step_id="extraction-1",
             step_type="extraction",
-            message="Extracting professors relevant to your research...",
+            message="Extracting relevant professors...",
+            professors=[],
             status="in_progress"
         )
 
-        time.sleep(1)  # Brief pause for UX
-
         try:
-            # Extract professors using the agent
+            # Extract professors using the agent (this takes time)
             professor_nodes, basic_professors = self.extraction_agent.extract_professors(context)
 
             # Store full professor nodes in context for final graph construction
@@ -196,18 +198,30 @@ class ResearchAgentOrchestrator:
             # Convert BasicProfessor objects to dict for JSON serialization
             basic_professors_dict = [prof.model_dump() for prof in basic_professors]
 
-            # Update the step to "done" with basic professors for display
+            # Update step with professors (still in_progress)
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="extraction-1",
                 step_type="extraction",
-                message=f"Extracted {len(basic_professors)} professors",
-                professors=basic_professors_dict,  # For frontend display
+                message="Extracting relevant professors...",
+                professors=basic_professors_dict,
+                status="in_progress"
+            )
+
+            time.sleep(1.5)  # Brief pause for UX
+
+            # Mark as done (all professors visible)
+            state_manager.add_run_step(
+                run_id=run_id,
+                step_id="extraction-1",
+                step_type="extraction",
+                message="Extracting relevant professors...",
+                professors=basic_professors_dict,
                 status="done"
             )
 
         except Exception as e:
-            # Mark extraction as done with error
+            # Mark as done with error
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="extraction-1",
@@ -223,12 +237,12 @@ class ResearchAgentOrchestrator:
         """
         run_id = context.run_id
 
-        # Add initial "relationships" step (in_progress)
+        # Add "relationships" step (in_progress) with message
         state_manager.add_run_step(
             run_id=run_id,
             step_id="relationships-1",
             step_type="relationships",
-            message="Analyzing relationships between professors...",
+            message="Analyzing relationships...",
             status="in_progress"
         )
 
@@ -244,17 +258,17 @@ class ResearchAgentOrchestrator:
             # Store links in context (we'll combine with nodes in graph construction)
             context.links = [link.model_dump() for link in links]
 
-            # Update the step to "done"
+            # Update the same step to "done" (same message)
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="relationships-1",
                 step_type="relationships",
-                message=f"Built {len(links)} relationships",
+                message="Analyzing relationships...",
                 status="done"
             )
 
         except Exception as e:
-            # Mark relationships as done with error
+            # Mark as done with error
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="relationships-1",
@@ -270,7 +284,7 @@ class ResearchAgentOrchestrator:
         """
         run_id = context.run_id
 
-        # Add initial "graph" step (in_progress)
+        # Add "graph" step (in_progress) with message
         state_manager.add_run_step(
             run_id=run_id,
             step_id="graph-1",
@@ -300,17 +314,17 @@ class ResearchAgentOrchestrator:
             # Store in state manager
             state_manager.set_run_graph(run_id, graph_data.model_dump())
 
-            # Update the step to "done"
+            # Update the same step to "done" (same message)
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="graph-1",
                 step_type="graph",
-                message=f"Graph constructed with {len(all_nodes)} nodes and {len(links)} links",
+                message="Building the final graph...",
                 status="done"
             )
 
         except Exception as e:
-            # Mark graph as done with error
+            # Mark as done with error
             state_manager.add_run_step(
                 run_id=run_id,
                 step_id="graph-1",

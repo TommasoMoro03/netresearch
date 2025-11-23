@@ -59,7 +59,10 @@ class StateManager:
         sources: Optional[list] = None
     ) -> None:
         """
-        Add a step log to a run.
+        Add or update a step log in a run.
+
+        If a step with the same step_id already exists, it will be updated.
+        Otherwise, a new step will be appended.
 
         Args:
             run_id: Run identifier
@@ -94,7 +97,16 @@ class StateManager:
             if sources is not None:
                 step_log["sources"] = sources
 
-            self.run_store[run_id]["steps"].append(step_log)
+            # Check if step already exists
+            steps = self.run_store[run_id]["steps"]
+            existing_step_index = next((i for i, s in enumerate(steps) if s["step_id"] == step_id), None)
+
+            if existing_step_index is not None:
+                # Update existing step
+                steps[existing_step_index] = step_log
+            else:
+                # Append new step
+                steps.append(step_log)
 
     def set_run_graph(self, run_id: str, graph_data: Dict[str, Any]) -> None:
         """Set the graph data for a completed run."""
