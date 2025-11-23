@@ -262,7 +262,7 @@ class ResearchAgentOrchestrator:
             if not context.professor_nodes:
                 raise ValueError("No professor nodes found for relationship building")
 
-            links = build_graph_links(context.professor_nodes)
+            links = build_graph_links(context.professor_nodes, context.max_nodes)
 
             # Store links in context (we'll combine with nodes in graph construction)
             context.links = [link.model_dump() for link in links]
