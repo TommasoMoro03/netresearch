@@ -53,7 +53,7 @@ PROFESSOR'S WORK:
 {professor_context}
 
 INSTRUCTIONS:
-- Start with a warm, genuine greeting (e.g., "Dear Professor {professor_name}")
+- Start with a warm, genuine greeting (e.g., "Dear Professor, don't state the professor's name")
 - Express specific enthusiasm about their work based on the context provided
 - Connect your background/interests to their research in a natural way
 - Ask if they have any research opportunities or would be open to collaboration
