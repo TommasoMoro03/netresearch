@@ -2,6 +2,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.schemas.cv import CVUploadResponse
 from app.services.state_manager import state_manager
 from app.services.cv_service import cv_service
+from app.database.database import db
 import uuid
 
 router = APIRouter(prefix="/api/cv", tags=["CV"])
@@ -36,6 +37,15 @@ async def upload_cv(file: UploadFile = File(...)):
             "concepts": extracted_concepts,
             "text_preview": text[:200] + "..." # Store preview for debugging
         })
+
+        # Save CV text to database
+        user = db.get_user()
+        if user:
+            # User exists, update CV
+            db.update_user_cv(text)
+        else:
+            # No user exists yet, create one with empty name
+            db.create_user("", text)
 
         return CVUploadResponse(
             cv_id=cv_id,

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.services.state_manager import state_manager
+from app.database.database import db
 
 router = APIRouter(prefix="/api", tags=["User"])
 
@@ -20,7 +21,16 @@ async def set_user_name(request: UserNameRequest):
     Store the user's name for use in emails and visualization.
     """
     state_manager.set_user_name(request.name)
-    
+
+    # Save to database
+    user = db.get_user()
+    if user:
+        # User exists, update name
+        db.update_user_name(request.name)
+    else:
+        # No user exists yet, create one with empty CV
+        db.create_user(request.name, "")
+
     return UserNameResponse(
         message="User name stored successfully",
         name=request.name
