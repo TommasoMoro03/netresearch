@@ -1,6 +1,6 @@
 // Type definitions for the Agent Reasoning Console
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 export interface Contact {
     email?: string;
