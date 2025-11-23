@@ -69,6 +69,29 @@ async def get_user_data():
     }
 
 
+@router.post("/reset")
+async def reset_database():
+    """
+    Reset all data in the database (delete all users and runs).
+    """
+    try:
+        db.reset_all_data()
+        # Also clear in-memory state
+        state_manager.cv_store.clear()
+        state_manager.run_store.clear()
+        state_manager.user_name = None
+
+        return {
+            "message": "Database reset successfully",
+            "status": "success"
+        }
+    except Exception as e:
+        return {
+            "message": f"Failed to reset database: {str(e)}",
+            "status": "error"
+        }
+
+
 @router.get("/debug")
 async def debug_state():
     """

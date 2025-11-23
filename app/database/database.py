@@ -154,6 +154,15 @@ class Database:
                 for row in rows
             ][::-1]
 
+    # Reset operations
+    def reset_all_data(self) -> None:
+        """Delete all data from user and run tables."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM user")
+            cursor.execute("DELETE FROM run")
+            conn.commit()
+
 
 # Global database instance
 db = Database()
