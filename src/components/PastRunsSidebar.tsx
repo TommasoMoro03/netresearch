@@ -46,14 +46,14 @@ export const PastRunsSidebar = ({ onRunClick }: PastRunsSidebarProps) => {
       await resetDatabase();
       setPastRuns([]);
       toast({
-        title: "Database Reset",
+        title: "History cleaned",
         description: "All data has been deleted successfully.",
       });
     } catch (error) {
-      console.error("Failed to reset database:", error);
+      console.error("Failed to clean history:", error);
       toast({
-        title: "Reset Failed",
-        description: "Failed to reset database. Please try again.",
+        title: "History cleaning failed",
+        description: "Failed to clean history. Please try again.",
         variant: "destructive",
       });
     } finally {
