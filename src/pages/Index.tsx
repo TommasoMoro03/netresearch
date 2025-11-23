@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import GraphVisualization from "@/components/GraphVisualization";
-import { GraphData, StepLog, uploadCV, startAgentRun } from "@/services/api";
+import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName } from "@/services/api";
 import { ReasoningConsole } from "@/components/ReasoningConsole";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,6 +22,7 @@ const Index = () => {
   const [runId, setRunId] = useState<string | null>(null);
   const [reasoningSteps, setReasoningSteps] = useState<StepLog[]>([]);
   const [isUploadingCV, setIsUploadingCV] = useState(false);
+  const [userName, setUserName] = useState("");
   const { toast } = useToast();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +62,11 @@ const Index = () => {
     setGraphData(null);
 
     try {
+      // Send user name to backend if provided
+      if (userName.trim()) {
+        await sendUserName(userName);
+      }
+
       const result = await startAgentRun(query, parseInt(maxNodes), cvId || undefined);
       setRunId(result.run_id);
     } catch (error) {
@@ -111,26 +117,35 @@ const Index = () => {
                 </h1>
               </div>
 
-              {/* Context Panel - CV Upload - Only show before starting search */}
+              {/* Context Panel - Name and CV Upload - Only show before starting search */}
               {!searchStarted && (
-                <label className="glass-panel rounded-xl px-4 py-3 flex items-center gap-3 min-w-[280px] cursor-pointer hover:border-primary/50 transition-all">
-                  <Upload className="w-5 h-5 text-primary" />
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={isUploadingCV}
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="text"
+                    placeholder="Your Full Name"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="glass-panel rounded-xl px-4 py-3 min-w-[200px] bg-input/50 border-border/50 focus:border-primary"
                   />
-                  <div className="flex-1 flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {isUploadingCV ? "Uploading..." : cvFile ? cvFile.name : "Upload CV Context"}
-                    </span>
-                    {cvFile && !isUploadingCV && (
-                      <span className="text-xs text-accent">✓ Loaded</span>
-                    )}
-                  </div>
-                </label>
+                  <label className="glass-panel rounded-xl px-4 py-3 flex items-center gap-3 min-w-[280px] cursor-pointer hover:border-primary/50 transition-all">
+                    <Upload className="w-5 h-5 text-primary" />
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={isUploadingCV}
+                    />
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {isUploadingCV ? "Uploading..." : cvFile ? cvFile.name : "Upload CV Context"}
+                      </span>
+                      {cvFile && !isUploadingCV && (
+                        <span className="text-xs text-accent">✓ Loaded</span>
+                      )}
+                    </div>
+                  </label>
+                </div>
               )}
             </div>
           </header>
