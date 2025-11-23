@@ -30,10 +30,13 @@ def build_graph_links(professor_nodes: List[Dict[str, Any]]) -> List[GraphLink]:
 
     # Group professors by institution ID
     institution_groups: Dict[str, List[GraphNode]] = defaultdict(list)
+    orphans: List[GraphNode] = []
 
     for prof in professors:
         if prof.institution and prof.institution.id:
             institution_groups[prof.institution.id].append(prof)
+        else:
+            orphans.append(prof)
 
     # Find boss for each institution and create links
     bosses = []
@@ -56,12 +59,22 @@ def build_graph_links(professor_nodes: List[Dict[str, Any]]) -> List[GraphLink]:
                 ))
 
     # Create User node (will be added to nodes list separately)
-    # Connect User to all bosses
+    # Connect User to all bosses AND all orphans
     user_id = "user-node"
+    
+    # Connect bosses
     for boss in bosses:
         links.append(GraphLink(
             source=user_id,
             target=boss.id,
+            label="interested_in"
+        ))
+        
+    # Connect orphans directly to user
+    for orphan in orphans:
+        links.append(GraphLink(
+            source=user_id,
+            target=orphan.id,
             label="interested_in"
         ))
 
