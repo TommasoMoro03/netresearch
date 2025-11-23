@@ -1,5 +1,6 @@
 import sqlite3
-from typing import Optional
+import json
+from typing import Optional, Dict, Any
 from contextlib import contextmanager
 import os
 
@@ -96,13 +97,16 @@ class Database:
             conn.commit()
 
     # Run operations
-    def create_run(self, run_id: str, query: str, graph_data: Optional[str] = None) -> None:
+    def create_run(self, run_id: str, query: str, graph_data: Optional[Dict[str, Any]] = None) -> None:
         """Create a new run."""
+        # Serialize graph_data to JSON if provided
+        graph_data_json = json.dumps(graph_data) if graph_data else None
+
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO run (id, query, graph_data) VALUES (?, ?, ?)",
-                (run_id, query, graph_data)
+                (run_id, query, graph_data_json)
             )
             conn.commit()
 
@@ -113,20 +117,25 @@ class Database:
             cursor.execute("SELECT * FROM run WHERE id = ?", (run_id,))
             row = cursor.fetchone()
             if row:
+                # Deserialize graph_data from JSON if present
+                graph_data = json.loads(row["graph_data"]) if row["graph_data"] else None
                 return {
                     "id": row["id"],
                     "query": row["query"],
-                    "graph_data": row["graph_data"]
+                    "graph_data": graph_data
                 }
             return None
 
-    def update_run_graph(self, run_id: str, graph_data: str) -> None:
+    def update_run_graph(self, run_id: str, graph_data: Dict[str, Any]) -> None:
         """Update the graph data for a run."""
+        # Serialize graph_data to JSON
+        graph_data_json = json.dumps(graph_data)
+
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE run SET graph_data = ? WHERE id = ?",
-                (graph_data, run_id)
+                (graph_data_json, run_id)
             )
             conn.commit()
 
@@ -140,7 +149,7 @@ class Database:
                 {
                     "id": row["id"],
                     "query": row["query"],
-                    "graph_data": row["graph_data"]
+                    "graph_data": json.loads(row["graph_data"]) if row["graph_data"] else None
                 }
                 for row in rows
             ]

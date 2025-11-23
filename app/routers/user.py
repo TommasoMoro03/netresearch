@@ -50,6 +50,25 @@ async def get_user_name():
     )
 
 
+@router.get("/user")
+async def get_user_data():
+    """
+    Get user data from database (name and CV status).
+    """
+    user = db.get_user()
+
+    if user:
+        return {
+            "name": user["name"],
+            "has_cv": bool(user["cv_transcribed"] and user["cv_transcribed"].strip())
+        }
+
+    return {
+        "name": "",
+        "has_cv": False
+    }
+
+
 @router.get("/debug")
 async def debug_state():
     """

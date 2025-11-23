@@ -9,6 +9,7 @@ from app.agents.intent_agent import IntentExtractionAgent
 from app.agents.search_agent import SearchAgent
 from app.agents.extraction_agent import ExtractionAgent
 from app.services.state_manager import state_manager
+from app.database.database import db
 from app.utils.paper_mapper import get_preview_papers
 from app.utils.graph_builder import build_graph_links, create_user_node
 from app.schemas.agent import GraphData, GraphNode
@@ -62,10 +63,16 @@ class ResearchAgentOrchestrator:
             # Mark as completed
             state_manager.update_run_status(run_id, "completed")
 
+            # Save to database
+            self._save_run_to_database(context)
+
         except Exception as e:
             # Log error and mark as failed
             self._log_error(run_id, str(e))
             state_manager.update_run_status(run_id, "completed")  # Still mark as completed for now
+
+            # Still try to save to database (even if there was an error)
+            self._save_run_to_database(context)
 
     def _execute_intent_extraction(self, context: AgentContext) -> None:
         """
@@ -333,6 +340,36 @@ class ResearchAgentOrchestrator:
                 status="done"
             )
             raise
+
+    def _save_run_to_database(self, context: AgentContext) -> None:
+        """
+        Save the completed run to the database.
+        Saves run_id, query, and graph_data.
+        """
+        run_id = context.run_id
+
+        try:
+            # Get the run data from state manager
+            run_data = state_manager.get_run(run_id)
+
+            if not run_data:
+                print(f"Warning: No run data found for {run_id}")
+                return
+
+            # Get graph data from the run
+            graph_data = run_data.get("graph_data")
+
+            # Use the actual query from context
+            query = context.query
+
+            # Save to database
+            db.create_run(run_id=run_id, query=query, graph_data=graph_data)
+
+            print(f"Successfully saved run {run_id} to database with query: {query}")
+
+        except Exception as e:
+            # Log error but don't fail the entire run
+            print(f"Error saving run {run_id} to database: {str(e)}")
 
     def _log_error(self, run_id: str, error_message: str) -> None:
         """Log error to state manager."""
