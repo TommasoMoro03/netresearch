@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import ForceGraph3D from 'react-force-graph-3d';
-import { GraphData, GraphNode, GraphLink, generateEmail, sendEmail, sendMessage } from '../services/api';
+import { GraphData, GraphNode, GraphLink, generateEmail, sendMessage } from '../services/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, Mail, Building, User, FileText, Network, Loader2, Send, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import SpriteText from 'three-spritetext';
+import { useToast } from "@/hooks/use-toast";
 
 interface GraphVisualizationProps {
     data: GraphData;
@@ -19,6 +20,7 @@ interface GraphVisualizationProps {
 
 const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName }) => {
     const fgRef = useRef<any>();
+    const { toast } = useToast();
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
     const [selectedLink, setSelectedLink] = useState<GraphLink | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -131,20 +133,34 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
     };
 
     const handleSendEmail = async () => {
-        setIsSendingEmail(true);
-        try {
-            await sendEmail(generatedEmail);
-            setIsEmailDialogOpen(false);
-            // Reset state after closing
-            setTimeout(() => {
-                setEmailStep('selection');
-                setGeneratedEmail("");
-                setIsSendingEmail(false);
-            }, 300);
-        } catch (error) {
-            console.error("Failed to send email", error);
-            setIsSendingEmail(false);
+        if (!selectedNode?.contacts?.email) {
+            toast({
+                title: "No Email Address",
+                description: "This researcher does not have an email address listed.",
+                variant: "destructive",
+            });
+            return;
         }
+
+        setIsSendingEmail(true);
+
+        // Simulate a short delay for UX
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const recipient = selectedNode.contacts.email;
+        const subject = encodeURIComponent("Research Collaboration Inquiry");
+        const body = encodeURIComponent(generatedEmail);
+
+        window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+
+        setIsEmailDialogOpen(false);
+        setIsSendingEmail(false);
+
+        // Reset state after closing
+        setTimeout(() => {
+            setEmailStep('selection');
+            setGeneratedEmail("");
+        }, 300);
     };
 
     const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {

@@ -193,15 +193,7 @@ export const generateEmail = async (type: 'reach_out' | 'colab', nodeName: strin
     });
 };
 
-// Send email (mock implementation - can be replaced with real backend endpoint if available)
-export const sendEmail = async (content: string): Promise<{ success: boolean }> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            console.log("Sending email:", content);
-            resolve({ success: true });
-        }, 1000);
-    });
-};
+
 
 export const sendMessage = async (text: string, nodeName: string): Promise<{ content: string }> => {
     return new Promise((resolve) => {
