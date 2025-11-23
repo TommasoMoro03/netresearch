@@ -2,6 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
 from app.services.state_manager import state_manager
 from app.services.simulation_service import run_research_agent
+from app.database.database import db
 import uuid
 
 router = APIRouter(prefix="/api/agent", tags=["Agent"])
@@ -61,3 +62,48 @@ async def get_agent_status(run_id: str):
         steps=run_data["steps"],
         graph_data=run_data["graph_data"]
     )
+
+
+@router.get("/runs")
+async def get_all_runs():
+    """
+    Get all past runs from the database.
+    Returns list of runs with id, query, and graph_data.
+    """
+    try:
+        runs = db.list_runs()
+        # Only return runs that have graph_data (completed runs)
+        completed_runs = [
+            {
+                "id": run["id"],
+                "query": run["query"],
+                "has_graph": run["graph_data"] is not None
+            }
+            for run in runs
+            if run["graph_data"] is not None
+        ]
+        return {"runs": completed_runs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch runs: {str(e)}")
+
+
+@router.get("/run/{run_id}")
+async def get_run_by_id(run_id: str):
+    """
+    Get a specific run by ID from the database.
+    Returns the full run data including graph_data.
+    """
+    try:
+        run = db.get_run(run_id)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+
+        return {
+            "id": run["id"],
+            "query": run["query"],
+            "graph_data": run["graph_data"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch run: {str(e)}")
