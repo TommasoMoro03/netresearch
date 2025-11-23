@@ -227,3 +227,35 @@ export const sendMessage = async (text: string, nodeName: string): Promise<{ con
         }, 1500);
     });
 };
+
+// Get all past runs from database
+export const getAllRuns = async (): Promise<{ id: string; query: string; has_graph: boolean }[]> => {
+    const response = await fetch(`${API_BASE_URL}/agent/runs`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch runs: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.runs;
+};
+
+// Get a specific run by ID from database
+export const getRunById = async (runId: string): Promise<{ id: string; query: string; graph_data: GraphData }> => {
+    const response = await fetch(`${API_BASE_URL}/agent/run/${runId}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch run: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Normalize graph data
+    const graphData = data.graph_data ? normalizeGraphData(data.graph_data) : null;
+
+    return {
+        id: data.id,
+        query: data.query,
+        graph_data: graphData
+    };
+};

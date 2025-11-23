@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import GraphVisualization from "@/components/GraphVisualization";
-import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData } from "@/services/api";
+import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData, getRunById } from "@/services/api";
 import { ReasoningConsole } from "@/components/ReasoningConsole";
+import { PastRunsSidebar } from "@/components/PastRunsSidebar";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -113,8 +114,6 @@ const Index = () => {
     setGraphData(null);
     setRunId(null);
     setReasoningSteps([]);
-    setCvFile(null);
-    setCvId(null);
   };
 
   const handleDiscoveryComplete = (data: GraphData, steps: StepLog[]) => {
@@ -124,10 +123,29 @@ const Index = () => {
     setIsComplete(true);
   };
 
+  const handlePastRunClick = async (runId: string, query: string) => {
+    try {
+      const runData = await getRunById(runId);
+      setQuery(query);
+      setGraphData(runData.graph_data);
+      setIsComplete(true);
+      setSearchStarted(true);
+    } catch (error) {
+      console.error("Failed to load past run:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load past search. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
+      {/* Sidebar - Only show when not in graph view */}
+      {!isComplete && <PastRunsSidebar onRunClick={handlePastRunClick} />}
 
-      <div className="relative z-10">
+      <div className={`relative z-10 ${!isComplete ? 'ml-80' : ''}`}>
         {/* Header - Only show on non-graph pages */}
         {!isComplete && (
           <header className="border-b border-border/50 backdrop-blur-sm">
