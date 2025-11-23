@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, Search, Zap, Brain, Network, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import GraphVisualization from "@/components/GraphVisualization";
-import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName } from "@/services/api";
+import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData } from "@/services/api";
 import { ReasoningConsole } from "@/components/ReasoningConsole";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,7 +23,29 @@ const Index = () => {
   const [reasoningSteps, setReasoningSteps] = useState<StepLog[]>([]);
   const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [userName, setUserName] = useState("");
+  const [hasCvLoaded, setHasCvLoaded] = useState(false);
   const { toast } = useToast();
+
+  // Load user data on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await getUserData();
+        if (userData.name) {
+          setUserName(userData.name);
+        }
+        if (userData.has_cv) {
+          setHasCvLoaded(true);
+          // Set a fake file to indicate CV is loaded
+          setCvFile(new File([], "existing_cv.pdf"));
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -35,6 +57,7 @@ const Index = () => {
       try {
         const result = await uploadCV(file);
         setCvId(result.cv_id);
+        setHasCvLoaded(true);
         toast({
           title: "CV Uploaded",
           description: `${result.filename} has been uploaded successfully.`,
@@ -47,6 +70,7 @@ const Index = () => {
           variant: "destructive",
         });
         setCvFile(null);
+        setHasCvLoaded(false);
       } finally {
         setIsUploadingCV(false);
       }
@@ -166,9 +190,9 @@ const Index = () => {
                     />
                     <div className="flex-1 flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">
-                        {isUploadingCV ? "Uploading..." : cvFile ? cvFile.name : "Upload CV Context"}
+                        {isUploadingCV ? "Uploading..." : hasCvLoaded ? "CV Loaded" : "Upload CV Context"}
                       </span>
-                      {cvFile && !isUploadingCV && (
+                      {hasCvLoaded && !isUploadingCV && (
                         <span className="text-xs text-accent">✓ Loaded</span>
                       )}
                     </div>

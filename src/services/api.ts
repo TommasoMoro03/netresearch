@@ -117,6 +117,17 @@ export const uploadCV = async (file: File): Promise<{ cv_id: string; filename: s
     return await response.json();
 };
 
+// Get user data from database
+export const getUserData = async (): Promise<{ name: string; has_cv: boolean }> => {
+    const response = await fetch(`${API_BASE_URL}/user`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to get user data: ${response.statusText}`);
+    }
+
+    return await response.json();
+};
+
 // Send user name to backend
 export const sendUserName = async (name: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/name`, {
@@ -193,7 +204,15 @@ export const generateEmail = async (type: 'reach_out' | 'colab', nodeName: strin
     });
 };
 
-
+// Send email (mock implementation - can be replaced with real backend endpoint if available)
+export const sendEmail = async (content: string): Promise<{ success: boolean }> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            console.log("Sending email:", content);
+            resolve({ success: true });
+        }, 1000);
+    });
+};
 
 export const sendMessage = async (text: string, nodeName: string): Promise<{ content: string }> => {
     return new Promise((resolve) => {
