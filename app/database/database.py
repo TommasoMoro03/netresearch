@@ -10,9 +10,14 @@ class Database:
 
     def __init__(self, db_path: str = "netresearch.db"):
         """Initialize database connection."""
-        # Use absolute path relative to backend directory
-        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        self.db_path = os.path.join(backend_dir, db_path)
+        # Use persistent disk in production, local path in development
+        if os.path.exists("/data"):
+            # Production: Render persistent disk
+            self.db_path = f"/data/{db_path}"
+        else:
+            # Development: Local directory
+            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            self.db_path = os.path.join(backend_dir, db_path)
         self._init_db()
 
     def _init_db(self):

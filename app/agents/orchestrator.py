@@ -305,8 +305,12 @@ class ResearchAgentOrchestrator:
         time.sleep(1)  # Brief pause for UX
 
         try:
-            # Create User node
-            user_node = create_user_node()
+            # Get user name from database
+            user_data = db.get_user()
+            user_name = user_data["name"] if user_data and user_data["name"] else "User"
+
+            # Create User node with actual user name
+            user_node = create_user_node(user_name)
 
             # Combine all nodes (professors + user)
             all_nodes = context.professor_nodes + [user_node.model_dump()]

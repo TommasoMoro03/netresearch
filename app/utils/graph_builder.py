@@ -114,16 +114,19 @@ def build_graph_links(professor_nodes: List[Dict[str, Any]], max_nodes: int = 10
     return links
 
 
-def create_user_node() -> GraphNode:
+def create_user_node(user_name: str = "User") -> GraphNode:
     """
     Create a User node for the graph.
+
+    Args:
+        user_name: The name of the user (defaults to "User" if not provided)
 
     Returns:
         GraphNode representing the user
     """
     return GraphNode(
         id="user-node",
-        name="User",
+        name=user_name,
         type="user",
         institution=None,
         description="You - the researcher exploring this network",
