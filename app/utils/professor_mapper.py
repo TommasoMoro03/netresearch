@@ -114,13 +114,13 @@ def map_author_to_basic_professor(author_data: Dict[str, Any]) -> BasicProfessor
     )
 
 
-def extract_author_ids_from_papers(papers: List[Dict[str, Any]], max_papers: int, authors_per_paper: int = 2) -> List[str]:
+def extract_author_ids_from_papers(papers: List[Dict[str, Any]], max_authors: int, authors_per_paper: int = 2) -> List[str]:
     """
     Extract author IDs from papers' authorships.
 
     Args:
         papers: List of OpenAlex work objects
-        max_papers: Maximum number of papers to process
+        max_authors: Maximum number of authors to extract
         authors_per_paper: Number of authors to extract per paper (default: 2)
 
     Returns:
@@ -129,10 +129,18 @@ def extract_author_ids_from_papers(papers: List[Dict[str, Any]], max_papers: int
     author_ids = []
     seen_ids = set()
 
-    for paper in papers[:max_papers]:
+    for paper in papers:
+        # Stop if we have enough authors
+        if len(author_ids) >= max_authors:
+            break
+
         authorships = paper.get("authorships", [])
 
         for authorship in authorships[:authors_per_paper]:
+            # Stop if we have enough authors
+            if len(author_ids) >= max_authors:
+                break
+
             author = authorship.get("author", {})
             author_id_url = author.get("id")
 

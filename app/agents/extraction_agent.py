@@ -46,7 +46,7 @@ class ExtractionAgent:
         # Step 1: Extract author IDs from first max_nodes papers
         author_ids = extract_author_ids_from_papers(
             papers=context.papers_data,
-            max_papers=context.max_nodes,
+            max_authors=context.max_nodes,
             authors_per_paper=2
         )
 
