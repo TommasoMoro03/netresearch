@@ -91,6 +91,11 @@ const normalizeInstitution = (institution?: string | Institution): string | unde
 
 // Helper function to normalize graph data from backend
 const normalizeGraphData = (rawData: any): GraphData => {
+    if (!rawData || !rawData.nodes || !rawData.links) {
+        console.warn("Invalid graph data received:", rawData);
+        return { nodes: [], links: [] };
+    }
+
     const nodes = rawData.nodes.map((node: any) => ({
         ...node,
         institution: normalizeInstitution(node.institution)
