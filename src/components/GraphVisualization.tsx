@@ -480,7 +480,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
                                         )}
 
                                         {/* Contacts */}
-                                        {(selectedNode.contacts?.email || selectedNode.contacts?.website || selectedNode.link_orcid) && (
+                                        {(selectedNode.contacts?.email || selectedNode.contacts?.website) && (
                                             <div className="space-y-2">
                                                 <h4 className="text-sm font-medium text-foreground">Contact & Links</h4>
                                                 <div className="flex flex-wrap gap-2">
@@ -500,14 +500,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({ data, userName 
                                                             </Badge>
                                                         </a>
                                                     )}
-                                                    {selectedNode.link_orcid && (
-                                                        <a href={selectedNode.link_orcid} target="_blank" rel="noopener noreferrer" className="no-underline">
-                                                            <Badge variant="outline" className="gap-1 hover:bg-primary/10 transition-colors cursor-pointer">
-                                                                <span className="font-bold text-[10px]">iD</span>
-                                                                ORCID
-                                                            </Badge>
-                                                        </a>
-                                                    )}
+
                                                 </div>
                                             </div>
                                         )}
