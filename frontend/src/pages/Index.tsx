@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Upload, Search, Zap, Brain, Network, FileText, Mic, Square, Loader2 } from "lucide-react";
+import { Upload, Search, Zap, Brain, Network, FileText, Mic, Square, Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +10,8 @@ import { GraphData, StepLog, uploadCV, startAgentRun, sendUserName, getUserData,
 import { ReasoningConsole } from "@/components/ReasoningConsole";
 import { PastRunsSidebar } from "@/components/PastRunsSidebar";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -30,6 +32,13 @@ const Index = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/auth");
+  };
 
   // Load user data on component mount
   useEffect(() => {
@@ -277,6 +286,14 @@ const Index = () => {
                       )}
                     </div>
                   </label>
+                  <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
                 </div>
               )}
             </div>

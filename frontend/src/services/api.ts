@@ -167,6 +167,7 @@ export const uploadCV = async (file: File): Promise<{ cv_id: string; filename: s
 
     const response = await fetch(`${API_BASE_URL}/cv/upload`, {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData,
     });
 
@@ -179,7 +180,9 @@ export const uploadCV = async (file: File): Promise<{ cv_id: string; filename: s
 
 // Get user data from database
 export const getUserData = async (): Promise<{ name: string; has_cv: boolean }> => {
-    const response = await fetch(`${API_BASE_URL}/user`);
+    const response = await fetch(`${API_BASE_URL}/user`, {
+        headers: getAuthHeaders(),
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to get user data: ${response.statusText}`);
@@ -194,6 +197,7 @@ export const sendUserName = async (name: string): Promise<void> => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
         },
         body: JSON.stringify({ name }),
     });
@@ -209,6 +213,7 @@ export const startAgentRun = async (query: string, maxNodes: number, cvId?: stri
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
         },
         body: JSON.stringify({
             query,
@@ -226,7 +231,9 @@ export const startAgentRun = async (query: string, maxNodes: number, cvId?: stri
 
 // Poll agent status
 export const getAgentStatus = async (runId: string): Promise<AgentStatusResponse> => {
-    const response = await fetch(`${API_BASE_URL}/agent/status/${runId}`);
+    const response = await fetch(`${API_BASE_URL}/agent/status/${runId}`, {
+        headers: getAuthHeaders(),
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to get agent status: ${response.statusText}`);
@@ -268,6 +275,7 @@ export const generateEmail = async (
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(requestBody),
     });
@@ -300,6 +308,7 @@ export const sendMessage = async (text: string, nodeName: string, runId: string,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(requestBody),
     });
@@ -313,7 +322,9 @@ export const sendMessage = async (text: string, nodeName: string, runId: string,
 
 // Get all past runs from database
 export const getAllRuns = async (): Promise<{ id: string; query: string; has_graph: boolean }[]> => {
-    const response = await fetch(`${API_BASE_URL}/agent/runs`);
+    const response = await fetch(`${API_BASE_URL}/agent/runs`, {
+        headers: getAuthHeaders(),
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch runs: ${response.statusText}`);
@@ -325,7 +336,9 @@ export const getAllRuns = async (): Promise<{ id: string; query: string; has_gra
 
 // Get a specific run by ID from database
 export const getRunById = async (runId: string): Promise<{ id: string; query: string; graph_data: GraphData }> => {
-    const response = await fetch(`${API_BASE_URL}/agent/run/${runId}`);
+    const response = await fetch(`${API_BASE_URL}/agent/run/${runId}`, {
+        headers: getAuthHeaders(),
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch run: ${response.statusText}`);
@@ -363,6 +376,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<{ text: string }
 
     const response = await fetch(`${API_BASE_URL}/audio/transcribe`, {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData,
     });
 
@@ -394,4 +408,66 @@ export const checkBackendHealth = async (): Promise<{ status: string; isHealthy:
         console.error("Backend health check failed:", error);
         return { status: 'unreachable', isHealthy: false };
     }
+};
+
+// Authentication API functions
+export interface RegisterData {
+    email: string;
+    password: string;
+    name?: string;
+}
+
+export interface LoginData {
+    email: string;
+    password: string;
+}
+
+export interface AuthResponse {
+    access_token: string;
+    token_type: string;
+}
+
+export const register = async (data: RegisterData): Promise<AuthResponse> => {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Registration failed');
+    }
+
+    return await response.json();
+};
+
+export const login = async (data: LoginData): Promise<AuthResponse> => {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Login failed');
+    }
+
+    return await response.json();
+};
+
+// Helper to get auth headers
+export const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+        return {
+            'Authorization': `Bearer ${token}`,
+        };
+    }
+    return {};
 };
