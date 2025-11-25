@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.services.state_manager import state_manager
 from app.database.database import db
+from app.auth.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/api", tags=["User"])
 
@@ -16,20 +17,18 @@ class UserNameResponse(BaseModel):
 
 
 @router.post("/name", response_model=UserNameResponse)
-async def set_user_name(request: UserNameRequest):
+async def set_user_name(
+    request: UserNameRequest,
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Store the user's name for use in emails and visualization.
+    Requires authentication.
     """
     state_manager.set_user_name(request.name)
 
     # Save to database
-    user = db.get_user()
-    if user:
-        # User exists, update name
-        db.update_user_name(request.name)
-    else:
-        # No user exists yet, create one with empty CV
-        db.create_user(request.name, "")
+    db.update_user_details(user_id=user_id, name=request.name)
 
     return UserNameResponse(
         message="User name stored successfully",
@@ -38,12 +37,21 @@ async def set_user_name(request: UserNameRequest):
 
 
 @router.get("/name", response_model=UserNameResponse)
-async def get_user_name():
+async def get_user_name(user_id: int = Depends(get_current_user_id)):
     """
     Retrieve the stored user name.
+    Requires authentication.
     """
+    # Try to get from state manager first
     name = state_manager.get_user_name()
-    
+
+    # If not in state, get from database
+    if not name:
+        details = db.get_user_details(user_id)
+        if details and details["name"]:
+            name = details["name"]
+            state_manager.set_user_name(name)
+
     return UserNameResponse(
         message="User name retrieved successfully",
         name=name or "Anonymous"
@@ -51,16 +59,17 @@ async def get_user_name():
 
 
 @router.get("/user")
-async def get_user_data():
+async def get_user_data(user_id: int = Depends(get_current_user_id)):
     """
     Get user data from database (name and CV status).
+    Requires authentication.
     """
-    user = db.get_user()
+    details = db.get_user_details(user_id)
 
-    if user:
+    if details:
         return {
-            "name": user["name"],
-            "has_cv": bool(user["cv_transcribed"] and user["cv_transcribed"].strip())
+            "name": details["name"] or "",
+            "has_cv": bool(details["cv_transcribed"] and details["cv_transcribed"].strip())
         }
 
     return {

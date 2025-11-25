@@ -1,18 +1,24 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
 from app.services.state_manager import state_manager
 from app.services.simulation_service import run_research_agent
 from app.database.database import db
+from app.auth.dependencies import get_current_user_id
 import uuid
 
 router = APIRouter(prefix="/api/agent", tags=["Agent"])
 
 
 @router.post("/run", response_model=AgentRunResponse)
-async def start_agent_run(request: AgentRunRequest, background_tasks: BackgroundTasks):
+async def start_agent_run(
+    request: AgentRunRequest,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Start a new agent run.
     Initializes the run state and starts background processing.
+    Requires authentication.
     """
     # Generate unique run ID
     run_id = str(uuid.uuid4())
@@ -23,6 +29,9 @@ async def start_agent_run(request: AgentRunRequest, background_tasks: Background
         cv_data = state_manager.get_cv(request.cv_id)
         if cv_data:
             cv_concepts = cv_data.get("concepts", [])
+
+    # Create run in database with user_id
+    db.create_run(run_id=run_id, user_id=user_id, query=request.query)
 
     # Create run in state manager
     state_manager.create_run(
@@ -65,13 +74,14 @@ async def get_agent_status(run_id: str):
 
 
 @router.get("/runs")
-async def get_all_runs():
+async def get_all_runs(user_id: int = Depends(get_current_user_id)):
     """
-    Get all past runs from the database.
+    Get all past runs from the database for the current user.
     Returns list of runs with id, query, and graph_data.
+    Requires authentication.
     """
     try:
-        runs = db.list_runs()
+        runs = db.list_runs(user_id=user_id)
         # Only return runs that have graph_data (completed runs)
         completed_runs = [
             {
@@ -88,13 +98,14 @@ async def get_all_runs():
 
 
 @router.get("/run/{run_id}")
-async def get_run_by_id(run_id: str):
+async def get_run_by_id(run_id: str, user_id: int = Depends(get_current_user_id)):
     """
     Get a specific run by ID from the database.
     Returns the full run data including graph_data.
+    Only returns runs belonging to the authenticated user.
     """
     try:
-        run = db.get_run(run_id)
+        run = db.get_run(run_id, user_id=user_id)
         if not run:
             raise HTTPException(status_code=404, detail="Run not found")
 

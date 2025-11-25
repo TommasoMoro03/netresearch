@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import cv, agent, email, user, chat, audio
+from app.auth import router as auth_router
 
 app = FastAPI(
     title="NetResearch Agent API",
@@ -23,7 +24,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include authentication router
+app.include_router(auth_router.router)
+
+# Include other routers
 app.include_router(agent.router)
 app.include_router(user.router)
 app.include_router(cv.router)

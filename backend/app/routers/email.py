@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from app.services.email_service import email_service
 from app.services.state_manager import state_manager
 from app.database.database import db
+from app.auth.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/api/email", tags=["Email"])
 
@@ -38,42 +39,46 @@ class EmailSendResponse(BaseModel):
     message: str
 
 @router.post("/generate", response_model=EmailGenerateResponse)
-async def generate_email(request: EmailGenerateRequest):
+async def generate_email(
+    request: EmailGenerateRequest,
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Generate an email based on type and context using LLM.
+    Requires authentication.
     """
     try:
         # Fetch CV data - make it optional
         cv_text = ""
         cv_concepts = []
-        
+
         # First try state_manager (in-memory) if cv_id provided
         cv_data = None
         if request.cv_id:
             cv_data = state_manager.get_cv(request.cv_id)
-        
+
         # If not found, try DB (persistence)
         if not cv_data:
-            user = db.get_user()
-            if user and user.get("cv_transcribed"):
+            user_details = db.get_user_details(user_id)
+            if user_details and user_details.get("cv_transcribed"):
                 # Reconstruct CV data structure from DB
                 cv_data = {
-                    "text_preview": user["cv_transcribed"],
+                    "text_preview": user_details["cv_transcribed"],
                     "concepts": []
                 }
-        
+
         # Extract CV info if available
         if cv_data:
             cv_text = cv_data.get("text_preview", "")
             cv_concepts = cv_data.get("concepts", [])
-        
+
         # Get student name
         student_name = state_manager.get_user_name()
         if not student_name:
-            user = db.get_user()
-            if user:
-                student_name = user["name"]
-        
+            user_details = db.get_user_details(user_id)
+            if user_details:
+                student_name = user_details["name"]
+
         # Generate email
         content = email_service.generate_email(
             email_type=request.email_type.value,
@@ -84,7 +89,7 @@ async def generate_email(request: EmailGenerateRequest):
             student_name=student_name,
             recipient_name=request.recipient_name
         )
-        
+
         return EmailGenerateResponse(
             content=content,
             message="Email generated successfully"

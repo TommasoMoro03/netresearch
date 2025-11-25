@@ -1,17 +1,22 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from app.schemas.cv import CVUploadResponse
 from app.services.state_manager import state_manager
 from app.services.cv_service import cv_service
 from app.database.database import db
+from app.auth.dependencies import get_current_user_id
 import uuid
 
 router = APIRouter(prefix="/api/cv", tags=["CV"])
 
 
 @router.post("/upload", response_model=CVUploadResponse)
-async def upload_cv(file: UploadFile = File(...)):
+async def upload_cv(
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Upload a CV (PDF file) and extract concepts.
+    Requires authentication.
     """
     # Validate file type
     if file.content_type != "application/pdf":
@@ -38,14 +43,8 @@ async def upload_cv(file: UploadFile = File(...)):
             "text_preview": text[:200] + "..." # Store preview for debugging
         })
 
-        # Save CV text to database
-        user = db.get_user()
-        if user:
-            # User exists, update CV
-            db.update_user_cv(text)
-        else:
-            # No user exists yet, create one with empty name
-            db.create_user("", text)
+        # Save CV text to database for authenticated user
+        db.update_user_details(user_id=user_id, cv_transcribed=text)
 
         return CVUploadResponse(
             cv_id=cv_id,

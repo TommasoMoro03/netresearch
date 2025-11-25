@@ -1,28 +1,33 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.chat import ChatMessageRequest, ChatMessageResponse
 from app.agents.professor_chat_agent import professor_chat_agent
 from app.database.database import db
 from app.services.state_manager import state_manager
+from app.auth.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
 
 @router.post("/message", response_model=ChatMessageResponse)
-async def send_chat_message(request: ChatMessageRequest):
+async def send_chat_message(
+    request: ChatMessageRequest,
+    user_id: int = Depends(get_current_user_id)
+):
     """Handle a chat request for a professor node.
 
     Retrieves user context (name, CV) and professor details from the
     persisted SQLite database, then forwards everything to the
     ``ProfessorChatAgent`` which uses ``pyagentspec`` to call the LLM.
+    Requires authentication.
     """
     try:
         # 1️⃣ User context
-        user = db.get_user()
-        user_name = user["name"] if user else (state_manager.get_user_name() or "Student")
-        user_cv = user["cv_transcribed"] if user else ""
+        user_details = db.get_user_details(user_id)
+        user_name = user_details["name"] if user_details else (state_manager.get_user_name() or "Student")
+        user_cv = user_details["cv_transcribed"] if user_details else ""
 
-        # 2️⃣ Run & graph data
-        run = db.get_run(request.run_id)
+        # 2️⃣ Run & graph data - ensure user owns this run
+        run = db.get_run(request.run_id, user_id=user_id)
         if not run:
             raise HTTPException(status_code=404, detail=f"Run {request.run_id} not found")
         graph_data = run.get("graph_data")

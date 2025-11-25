@@ -1,16 +1,21 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from openai import OpenAI
 import shutil
 import os
 import tempfile
 from app.core.config import settings
+from app.auth.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/api/audio", tags=["Audio"])
 
 @router.post("/transcribe")
-async def transcribe_audio(file: UploadFile = File(...)):
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id)
+):
     """
     Transcribe an uploaded audio file using OpenAI Whisper.
+    Requires authentication.
     """
     # Create a temporary file to store the upload
     # We use delete=False so we can close it before passing to OpenAI, then delete manually
