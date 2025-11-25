@@ -372,3 +372,26 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<{ text: string }
 
     return await response.json();
 };
+
+// Check backend health status
+export const checkBackendHealth = async (): Promise<{ status: string; isHealthy: boolean }> => {
+    try {
+        const baseUrl = import.meta.env.VITE_API_URL || "/api";
+        // Check the root health endpoint
+        const healthUrl = baseUrl.endsWith("/api") ? baseUrl.replace("/api", "/health") : `${baseUrl}/health`;
+
+        const response = await fetch(healthUrl, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+        });
+
+        if (response.ok) {
+            return { status: 'ok', isHealthy: true };
+        } else {
+            return { status: 'error', isHealthy: false };
+        }
+    } catch (error) {
+        console.error("Backend health check failed:", error);
+        return { status: 'unreachable', isHealthy: false };
+    }
+};
