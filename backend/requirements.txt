@@ -12,3 +12,5 @@ wayflowcore>=25.4.2
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 python-dateutil>=2.8.2
+email-validator>=2.0.0
+bcrypt>=4.0.0
