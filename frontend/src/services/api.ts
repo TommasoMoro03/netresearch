@@ -437,8 +437,12 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Registration failed');
+        try {
+            const error = await response.json();
+            throw new Error(error.detail || 'Registration failed');
+        } catch (e) {
+            throw new Error(`Registration failed: ${response.statusText}`);
+        }
     }
 
     return await response.json();
@@ -454,8 +458,12 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Login failed');
+        try {
+            const error = await response.json();
+            throw new Error(error.detail || 'Login failed');
+        } catch (e) {
+            throw new Error(`Login failed: ${response.statusText}`);
+        }
     }
 
     return await response.json();

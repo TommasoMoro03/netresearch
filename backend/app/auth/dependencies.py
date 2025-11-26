@@ -1,11 +1,15 @@
 """FastAPI dependencies for authentication."""
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.auth.service import decode_access_token
+from jose import JWTError, jwt
 from app.database.database import db
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
+
+# JWT settings
+SECRET_KEY = "KEY"
+ALGORITHM = "HS256"
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
@@ -24,13 +28,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    # Decode the token
-    token_data = decode_access_token(credentials.credentials)
-    if token_data is None:
+    try:
+        # Decode the token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = payload.get("id")
+
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
         raise credentials_exception
 
     # Get user from database
-    user = db.get_user_by_id(token_data.user_id)
+    user = db.get_user_by_id(user_id)
     if user is None:
         raise credentials_exception
 
