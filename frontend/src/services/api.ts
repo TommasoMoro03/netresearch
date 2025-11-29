@@ -469,6 +469,27 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
     return await response.json();
 };
 
+export const googleLogin = async (idToken: string): Promise<AuthResponse> => {
+    const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id_token: idToken }),
+    });
+
+    if (!response.ok) {
+        try {
+            const error = await response.json();
+            throw new Error(error.detail || 'Google login failed');
+        } catch (e) {
+            throw new Error(`Google login failed: ${response.statusText}`);
+        }
+    }
+
+    return await response.json();
+};
+
 // Helper to get auth headers
 export const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('auth_token');

@@ -47,3 +47,8 @@ class UserDetailsResponse(BaseModel):
 class UserDetailsUpdate(BaseModel):
     """Schema for updating user details."""
     name: Optional[str] = None
+
+
+class GoogleLoginRequest(BaseModel):
+    """Schema for Google OAuth login."""
+    id_token: str = Field(..., description="Google ID token from client")

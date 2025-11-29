@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { login as apiLogin, register as apiRegister, LoginData, RegisterData } from "@/services/api";
+import { login as apiLogin, register as apiRegister, googleLogin as apiGoogleLogin, LoginData, RegisterData } from "@/services/api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
   login: (data: LoginData) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -37,6 +38,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(response.access_token);
   };
 
+  const googleLogin = async (idToken: string) => {
+    const response = await apiGoogleLogin(idToken);
+    localStorage.setItem("auth_token", response.access_token);
+    setToken(response.access_token);
+  };
+
   const logout = () => {
     localStorage.removeItem("auth_token");
     setToken(null);
@@ -49,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         token,
         login,
         register,
+        googleLogin,
         logout,
         isLoading,
       }}

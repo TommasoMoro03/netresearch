@@ -6,7 +6,8 @@ from app.auth.schemas import (
     Token,
     UserResponse,
     UserDetailsResponse,
-    UserDetailsUpdate
+    UserDetailsUpdate,
+    GoogleLoginRequest
 )
 from app.auth.service import AuthService
 from app.auth.dependencies import get_current_user_id
@@ -87,6 +88,57 @@ async def login(credentials: UserLogin):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
+        )
+
+
+@router.post("/google/login", response_model=Token)
+async def google_login(request: GoogleLoginRequest):
+    """
+    Login or register with Google OAuth.
+
+    Args:
+        request: Google login request containing the ID token
+
+    Returns:
+        JWT access token
+
+    Raises:
+        HTTPException: If token is invalid or verification fails
+    """
+    try:
+        user, token = await auth_service.google_login(request.id_token)
+        return Token(access_token=token)
+    except ValueError as e:
+        error_msg = str(e).lower()
+        if "not configured" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail="Google OAuth is not configured on this server"
+            )
+        elif "invalid" in error_msg or "verification failed" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Google token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        elif "already registered" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(e)
+            )
+        elif "not verified" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not verified by Google"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Google login failed: {str(e)}"
         )
 
 

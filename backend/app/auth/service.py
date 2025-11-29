@@ -5,6 +5,7 @@ import bcrypt
 from jose import JWTError, jwt
 from app.auth.schemas import TokenData, UserRegister, UserLogin
 from app.database.database import db
+from app.auth.google_oauth import GoogleOAuthService
 
 # JWT settings
 SECRET_KEY = "KEY"  # TODO: Move to environment variable
@@ -65,6 +66,14 @@ def decode_access_token(token: str) -> Optional[TokenData]:
 class AuthService:
     """Service class for authentication operations."""
 
+    def __init__(self):
+        """Initialize auth service."""
+        try:
+            self.google_oauth = GoogleOAuthService()
+        except ValueError:
+            # Google OAuth not configured, that's okay
+            self.google_oauth = None
+
     def signup(self, signup_data: UserRegister) -> Tuple[dict, str]:
         """
         Register a new user.
@@ -119,6 +128,54 @@ class AuthService:
 
         # Update last login
         db.update_last_login(user["id"])
+
+        # Create access token
+        token = create_access_token(data={"id": user["id"], "email": user["email"]})
+
+        return (user, token)
+
+    async def google_login(self, id_token: str) -> Tuple[dict, str]:
+        """
+        Login or register a user with Google OAuth.
+        Returns tuple of (user_dict, token).
+        Raises ValueError if token is invalid or Google OAuth not configured.
+        """
+        if not self.google_oauth:
+            raise ValueError("Google OAuth is not configured")
+
+        # Verify the Google ID token
+        user_info = await self.google_oauth.verify_token(id_token)
+
+        if not user_info.get("email_verified"):
+            raise ValueError("Email not verified by Google")
+
+        email = user_info["email"]
+        name = user_info.get("name")
+
+        # Check if user exists
+        user = db.get_user_by_email(email)
+
+        if user:
+            # User exists - check if they used Google before
+            if user["provider"] != "google":
+                raise ValueError(f"Email already registered with {user['provider']} provider")
+
+            # Update last login
+            db.update_last_login(user["id"])
+        else:
+            # Create new user with Google provider
+            user_id = db.create_user(
+                email=email,
+                hashed_password=None,  # No password for Google users
+                provider="google"
+            )
+
+            # Create user details if name provided
+            if name:
+                db.create_user_details(user_id=user_id, name=name)
+
+            # Get created user
+            user = db.get_user_by_id(user_id)
 
         # Create access token
         token = create_access_token(data={"id": user["id"], "email": user["email"]})

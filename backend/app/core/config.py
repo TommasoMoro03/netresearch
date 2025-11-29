@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # OpenAI Configuration (for Whisper)
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API Key")
 
+    # Google OAuth Configuration
+    GOOGLE_CLIENT_ID: Optional[str] = Field(default=None, description="Google OAuth Client ID")
+
     # Together AI Configuration
     TOGETHER_API_KEY: Optional[str] = Field(
         default=None,

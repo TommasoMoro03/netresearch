@@ -30,7 +30,8 @@ class Database:
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     email TEXT UNIQUE NOT NULL,
-                    hashed_password TEXT NOT NULL,
+                    hashed_password TEXT,
+                    provider TEXT DEFAULT 'email',
                     is_active INTEGER DEFAULT 1,
                     created_at TEXT NOT NULL,
                     last_login TEXT
@@ -122,7 +123,7 @@ class Database:
             conn.close()
 
     # User authentication operations
-    def create_user(self, email: str, hashed_password: str) -> int:
+    def create_user(self, email: str, hashed_password: Optional[str] = None, provider: str = 'email') -> int:
         """Create a new user account."""
         from datetime import datetime
         now = datetime.utcnow().isoformat()
@@ -130,8 +131,8 @@ class Database:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO users (email, hashed_password, created_at) VALUES (?, ?, ?)",
-                (email, hashed_password, now)
+                "INSERT INTO users (email, hashed_password, provider, created_at) VALUES (?, ?, ?, ?)",
+                (email, hashed_password, provider, now)
             )
             conn.commit()
             return cursor.lastrowid
@@ -147,6 +148,7 @@ class Database:
                     "id": row["id"],
                     "email": row["email"],
                     "hashed_password": row["hashed_password"],
+                    "provider": row["provider"],
                     "is_active": bool(row["is_active"]),
                     "created_at": row["created_at"],
                     "last_login": row["last_login"]
@@ -164,6 +166,7 @@ class Database:
                     "id": row["id"],
                     "email": row["email"],
                     "hashed_password": row["hashed_password"],
+                    "provider": row["provider"],
                     "is_active": bool(row["is_active"]),
                     "created_at": row["created_at"],
                     "last_login": row["last_login"]
