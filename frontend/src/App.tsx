@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginExperiment from "./pages/LoginExperiment";
 
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -16,8 +17,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* A/B experiment route – additive only */}
+          <Route path="/" element={<Index />} />          {/* A/B experiment route – additive only */}
           <Route path="/login-experiment" element={<LoginExperiment />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
