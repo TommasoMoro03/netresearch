@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import BoldTitleExperiment from "./components/experiment/BoldTitleExperiment";
+import LoginExperiment from "./pages/LoginExperiment";
+
 
 const queryClient = new QueryClient();
 
@@ -16,8 +17,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/experiment/bold-title" element={<BoldTitleExperiment />} />
+          <Route path="/" element={<Index />} />          {/* A/B experiment route – additive only */}
+          <Route path="/login-experiment" element={<LoginExperiment />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
